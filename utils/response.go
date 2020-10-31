@@ -43,6 +43,7 @@ func ResponseError(w http.ResponseWriter, r *http.Request, err error) {
 	})
 }
 
+// ResponseNotFound - send response not found (404)
 func ResponseNotFound(w http.ResponseWriter, r *http.Request, message string) {
 	render.Status(r, http.StatusNotFound)
 	render.JSON(w, r, response.H{
