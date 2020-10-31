@@ -36,7 +36,7 @@ func (m *mongoTodoRepository) FindAll(keyword string, limit int, offset int) ([]
 	c := session.DB(os.Getenv("DB_NAME")).C("todo")
 	results := []*models.Todo{}
 
-	err := c.Find(bson.M{"name": bson.M{"$regex": keyword, "$options": "i"}}).Sort("-createdAt").
+	err := c.Find(bson.M{"title": bson.M{"$regex": keyword, "$options": "i"}}).Sort("-createdAt").
 		Limit(limit).Skip(offset).All(&results)
 	if err != nil {
 		return results, err
@@ -50,7 +50,7 @@ func (m *mongoTodoRepository) CountFindAll(keyword string) (int, error) {
 	session := m.pool.Session(nil)
 	c := session.DB(os.Getenv("DB_NAME")).C("todo")
 
-	total, err := c.Find(bson.M{"name": bson.M{"$regex": keyword, "$options": "i"}}).Count()
+	total, err := c.Find(bson.M{"title": bson.M{"$regex": keyword, "$options": "i"}}).Count()
 	if err != nil {
 		return total, err
 	}

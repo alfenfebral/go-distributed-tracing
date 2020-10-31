@@ -5,7 +5,7 @@ import (
 	"../repository"
 )
 
-// TodoService represent the instance service
+// TodoService represent the todo service
 type TodoService interface {
 	GetAll(keyword string, limit int, offset int) ([]*models.Todo, int, error)
 	GetByID(id string) (*models.Todo, error)
@@ -15,26 +15,26 @@ type TodoService interface {
 	Delete(id string) error
 }
 
-type instanceService struct {
-	instanceRepo repository.TodoRepository
+type todoService struct {
+	todoRepo repository.TodoRepository
 }
 
 // NewTodoService will create new an TodoService object representation of TodoService interface
 func NewTodoService(a repository.TodoRepository) TodoService {
-	return &instanceService{
-		instanceRepo: a,
+	return &todoService{
+		todoRepo: a,
 	}
 }
 
-// GetAll - get all instance service
-func (a *instanceService) GetAll(keyword string, limit int, offset int) ([]*models.Todo, int, error) {
-	res, err := a.instanceRepo.FindAll(keyword, limit, offset)
+// GetAll - get all todo service
+func (a *todoService) GetAll(keyword string, limit int, offset int) ([]*models.Todo, int, error) {
+	res, err := a.todoRepo.FindAll(keyword, limit, offset)
 	if err != nil {
 		return nil, 0, err
 	}
 
 	// Count total
-	total, err := a.instanceRepo.CountFindAll(keyword)
+	total, err := a.todoRepo.CountFindAll(keyword)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -42,9 +42,9 @@ func (a *instanceService) GetAll(keyword string, limit int, offset int) ([]*mode
 	return res, total, nil
 }
 
-// CountGetByID - count get instance by id service
-func (a *instanceService) CountGetByID(id string) (int, error) {
-	res, err := a.instanceRepo.CountFindByID(id)
+// CountGetByID - count get todo by id service
+func (a *todoService) CountGetByID(id string) (int, error) {
+	res, err := a.todoRepo.CountFindByID(id)
 	if err != nil {
 		return res, err
 	}
@@ -52,9 +52,9 @@ func (a *instanceService) CountGetByID(id string) (int, error) {
 	return res, nil
 }
 
-// GetByID - get instance by id service
-func (a *instanceService) GetByID(id string) (*models.Todo, error) {
-	res, err := a.instanceRepo.FindById(id)
+// GetByID - get todo by id service
+func (a *todoService) GetByID(id string) (*models.Todo, error) {
+	res, err := a.todoRepo.FindById(id)
 	if err != nil {
 		return res, err
 	}
@@ -62,9 +62,9 @@ func (a *instanceService) GetByID(id string) (*models.Todo, error) {
 	return res, nil
 }
 
-// Create - creating instance service
-func (a *instanceService) Create(value interface{}) (*models.Todo, error) {
-	res, err := a.instanceRepo.Store(value)
+// Create - creating todo service
+func (a *todoService) Create(value interface{}) (*models.Todo, error) {
+	res, err := a.todoRepo.Store(value)
 	if err != nil {
 		return res, err
 	}
@@ -72,9 +72,9 @@ func (a *instanceService) Create(value interface{}) (*models.Todo, error) {
 	return res, nil
 }
 
-// Update - update instance service
-func (a *instanceService) Update(id string, value interface{}) error {
-	err := a.instanceRepo.Update(id, value)
+// Update - update todo service
+func (a *todoService) Update(id string, value interface{}) error {
+	err := a.todoRepo.Update(id, value)
 	if err != nil {
 		return err
 	}
@@ -82,9 +82,9 @@ func (a *instanceService) Update(id string, value interface{}) error {
 	return nil
 }
 
-// Delete - delete instance service
-func (a *instanceService) Delete(id string) error {
-	err := a.instanceRepo.Delete(id)
+// Delete - delete todo service
+func (a *todoService) Delete(id string) error {
+	err := a.todoRepo.Delete(id)
 	if err != nil {
 		return err
 	}

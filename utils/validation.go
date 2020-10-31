@@ -2,10 +2,16 @@ package utils
 
 import (
 	"fmt"
+	"reflect"
+	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/go-playground/validator"
+	"github.com/iancoleman/strcase"
 )
+
+var validate *validator.Validate
 
 // CommonError - error response format
 type CommonError struct {
@@ -18,7 +24,7 @@ func ValidatonError(err error) CommonError {
 	errs := err.(validator.ValidationErrors)
 
 	for _, v := range errs {
-		field := strings.ToLower(v.Field())
+		field := strcase.ToSnake(v.Field())
 
 		switch v.Tag() {
 		case "required":
@@ -41,4 +47,120 @@ func ValidatonError(err error) CommonError {
 	}
 
 	return res
+}
+
+func ValidateStruct(i interface{}) error {
+	validate = validator.New()
+	validate.RegisterValidation("sinteger", Integer)
+	validate.RegisterValidation("sgte", GreaterThanEqual)
+	validate.RegisterValidation("slte", LessThanEqual)
+	validate.RegisterValidation("username", Username)
+
+	err := validate.Struct(i)
+	if err != nil {
+
+		// this check is only needed when your code could produce
+		// an invalid value for validation such as interface with nil
+		// value most including myself do not usually have code like this.
+		if _, ok := err.(*validator.InvalidValidationError); ok {
+			return err
+		}
+
+		return err
+	}
+
+	return err
+}
+
+func getFieldName(tag, key string, s interface{}) (fieldname string) {
+	rt := reflect.TypeOf(s)
+	if rt.Kind() != reflect.Struct {
+		panic("bad type")
+	}
+	for i := 0; i < rt.NumField(); i++ {
+		f := rt.Field(i)
+		v := strings.Split(f.Tag.Get(key), ",")[0] // use split to ignore tag "options"
+		if v == tag {
+			return f.Name
+		}
+	}
+	return ""
+}
+
+// Integer - integer only validation
+func Integer(fl validator.FieldLevel) bool {
+	// If empty skip
+	if fl.Field().String() == "" {
+		return true
+	}
+
+	_, err := strconv.Atoi(fl.Field().String())
+	if err != nil {
+		return false
+	}
+
+	return true
+}
+
+// GreaterThanEqual - greater than equal
+func GreaterThanEqual(fl validator.FieldLevel) bool {
+	// If empty skip
+	if fl.Field().String() == "" {
+		return true
+	}
+
+	i, err := strconv.Atoi(fl.Field().String())
+	if err != nil {
+		return false
+	}
+
+	param, err := strconv.Atoi(fl.Param())
+	if err != nil {
+		return false
+	}
+
+	if i < param {
+		return false
+	}
+
+	return true
+}
+
+// LessThanEqual - less than equal
+func LessThanEqual(fl validator.FieldLevel) bool {
+	// If empty skip
+	if fl.Field().String() == "" {
+		return true
+	}
+
+	i, err := strconv.Atoi(fl.Field().String())
+	if err != nil {
+		return false
+	}
+
+	param, err := strconv.Atoi(fl.Param())
+	if err != nil {
+		return false
+	}
+
+	if i > param {
+		return false
+	}
+
+	return true
+}
+
+// Username - username regex only alphanumeric
+func Username(fl validator.FieldLevel) bool {
+	// If empty skip
+	if fl.Field().String() == "" {
+		return true
+	}
+
+	var regex = regexp.MustCompile(`^[A-Za-z0-9]+(?:[_-][A-Za-z0-9]+)*$`)
+	if !regex.MatchString(fl.Field().String()) {
+		return false
+	}
+
+	return true
 }
