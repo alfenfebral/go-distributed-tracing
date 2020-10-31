@@ -25,6 +25,7 @@ func NewTodoHTTPHandler(router *chi.Mux, service services.TodoService) {
 	}
 
 	router.Get("/todo", handler.GetAll)
+	router.Get("/todo/{id}", handler.GetByID)
 	router.Post("/todo", handler.Create)
 }
 
@@ -105,4 +106,32 @@ func (handler *Todohandler) GetAll(w http.ResponseWriter, r *http.Request) {
 			"totalCount": totalData,
 		},
 	})
+}
+
+// GetByID - get TODO by id http handler
+func (handler *Todohandler) GetByID(w http.ResponseWriter, r *http.Request) {
+	// Get and filter id param
+	id := chi.URLParam(r, "id")
+	log.Print(id)
+
+	// Get detail
+	result, err := handler.TodoService.GetByID(id)
+	if err != nil {
+		if err.Error() == "not found" {
+			utils.ResponseNotFound(w, r, "Item not found")
+			return
+		}
+
+		utils.ResponseError(w, r, err)
+		return
+	}
+
+	render.Status(r, http.StatusOK)
+	render.JSON(w, r, response.H{
+		"success": true,
+		"code":    http.StatusOK,
+		"message": "Get Todo",
+		"data":    result,
+	})
+
 }
