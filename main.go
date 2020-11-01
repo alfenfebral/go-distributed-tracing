@@ -46,7 +46,7 @@ func Routes() *chi.Mux {
 
 func InitializeSentry() {
 	err := sentry.Init(sentry.ClientOptions{
-		Dsn: "https://7d1c4f676f3841b2ada881428f7014e3@o469167.ingest.sentry.io/5498121",
+		Dsn: os.Getenv("SENTRY_URL"),
 	})
 	if err != nil {
 		logrus.Fatalf("sentry.Init: %s", err)
@@ -90,9 +90,6 @@ func main() {
 	mPool := mgosession.NewPool(nil, session, configMCP)
 	defer mPool.Close()
 
-	// Validator
-	// binding.Validator = new(utils.DefaultValidator)
-
 	router := Routes()
 
 	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
@@ -112,6 +109,8 @@ func main() {
 	// Handler
 	apis.NewTodoHTTPHandler(router, todoService)
 
+	// Print
 	PrintAllRoutes(router)
+
 	logrus.Fatal(http.ListenAndServe(fmt.Sprintf("%s%s", ":", os.Getenv("PORT")), router)) // Note, the port is usually gotten from the environment.
 }
