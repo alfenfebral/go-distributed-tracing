@@ -15,11 +15,31 @@ import (
 	"../models"
 	"../utils"
 
+	"github.com/go-chi/chi"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
 	"github.com/bxcodec/faker"
 )
+
+func TestNewTodoHTTPHandler(t *testing.T) {
+	router := chi.NewRouter()
+	mockService := new(mockServices.TodoService)
+
+	var mockTodo models.Todo
+	err := faker.FakeData(&mockTodo)
+	assert.NoError(t, err)
+	mockListTodo := make([]*models.Todo, 0)
+	mockListTodo = append(mockListTodo, &mockTodo)
+
+	mockService.On("GetAll", "", 10, utils.Offset(1, 10)).Return(mockListTodo, len(mockListTodo), nil)
+	mockService.On("GetByID", "").Return(&mockTodo, nil)
+	mockService.On("Create", mock.Anything).Return(&mockTodo, nil)
+	mockService.On("Update", mock.Anything, mock.Anything).Return(nil, nil)
+	mockService.On("Delete", mock.Anything).Return(nil)
+
+	apis.NewTodoHTTPHandler(router, mockService)
+}
 
 // TestGetAllSuccess - testing GetAll [200]
 func TestGetAllSuccess(t *testing.T) {
