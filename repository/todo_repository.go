@@ -1,13 +1,17 @@
 package repository
 
 import (
+	"context"
 	"errors"
 	"os"
+	"time"
+
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"../models"
-
-	"github.com/juju/mgosession"
-	"gopkg.in/mgo.v2/bson"
 )
 
 // TodoRepository represent the todo repository contract
@@ -16,62 +20,98 @@ type TodoRepository interface {
 	CountFindAll(keyword string) (int, error)
 	FindById(id string) (*models.Todo, error)
 	CountFindByID(id string) (int, error)
-	Store(value interface{}) (*models.Todo, error)
-	Update(id string, value interface{}) error
+	Store(value bson.M) (*models.Todo, error)
+	Update(id string, value bson.D) (*models.Todo, error)
 	Delete(id string) error
 }
 
 type mongoTodoRepository struct {
-	pool *mgosession.Pool
+	client *mongo.Client
 }
 
 // NewMongoTodoRepository will create an object that represent the TodoRepository interface
-func NewMongoTodoRepository(Pool *mgosession.Pool) TodoRepository {
-	return &mongoTodoRepository{Pool}
+func NewMongoTodoRepository(client *mongo.Client) TodoRepository {
+	return &mongoTodoRepository{
+		client: client,
+	}
 }
 
 // FindAll - find all todo
 func (m *mongoTodoRepository) FindAll(keyword string, limit int, offset int) ([]*models.Todo, error) {
-	session := m.pool.Session(nil)
-	c := session.DB(os.Getenv("DB_NAME")).C("todo")
-	results := []*models.Todo{}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
-	err := c.Find(bson.M{"title": bson.M{"$regex": keyword, "$options": "i"}}).Sort("-createdAt").
-		Limit(limit).Skip(offset).All(&results)
+	var results []*models.Todo
+
+	// Pass these options to the Find method
+	findOptions := options.Find()
+	findOptions.SetLimit(int64(limit))
+	findOptions.SetSkip(int64(offset))
+
+	collection := m.client.Database(os.Getenv("DB_NAME")).Collection("todo")
+	cur, err := collection.Find(ctx, bson.M{"title": bson.M{"$regex": keyword, "$options": "i"}}, findOptions)
 	if err != nil {
-		return results, err
+		return []*models.Todo{}, err
 	}
+
+	// Finding multiple documents returns a cursor
+	// Iterating through the cursor allows us to decode documents one at a time
+	for cur.Next(context.TODO()) {
+
+		// create a value into which the single document can be decoded
+		var elem models.Todo
+		err := cur.Decode(&elem)
+		if err != nil {
+			return []*models.Todo{}, err
+		}
+
+		results = append(results, &elem)
+	}
+
+	if err := cur.Err(); err != nil {
+		return []*models.Todo{}, err
+	}
+
+	// Close the cursor once finished
+	cur.Close(context.TODO())
 
 	return results, nil
 }
 
 // CountFindAll - count find all todo
 func (m *mongoTodoRepository) CountFindAll(keyword string) (int, error) {
-	session := m.pool.Session(nil)
-	c := session.DB(os.Getenv("DB_NAME")).C("todo")
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
-	total, err := c.Find(bson.M{"title": bson.M{"$regex": keyword, "$options": "i"}}).Count()
+	collection := m.client.Database(os.Getenv("DB_NAME")).Collection("todo")
+
+	total, err := collection.CountDocuments(ctx, bson.M{"title": bson.M{"$regex": keyword, "$options": "i"}})
 	if err != nil {
-		return total, err
+		return int(total), err
 	}
 
-	return total, nil
+	return int(total), nil
 }
 
 // FindById - find todo by id
 func (m *mongoTodoRepository) FindById(id string) (*models.Todo, error) {
-	session := m.pool.Session(nil)
-	c := session.DB(os.Getenv("DB_NAME")).C("todo")
-	result := &models.Todo{}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
-	// Validate string if hex
-	if !bson.IsObjectIdHex(id) {
-		return result, errors.New("not found")
+	docID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, errors.New("not found")
 	}
 
-	// Find data
-	err := c.FindId(bson.ObjectIdHex(id)).One(&result)
+	collection := m.client.Database(os.Getenv("DB_NAME")).Collection("todo")
+
+	result := &models.Todo{}
+	err = collection.FindOne(ctx, bson.M{"_id": docID}).Decode(&result)
 	if err != nil {
+		if err.Error() == "mongo: no documents in result" {
+			return result, errors.New("not found")
+		}
+
 		return result, err
 	}
 
@@ -80,77 +120,93 @@ func (m *mongoTodoRepository) FindById(id string) (*models.Todo, error) {
 
 // CountFindByID - find count todo by id
 func (m *mongoTodoRepository) CountFindByID(id string) (int, error) {
-	session := m.pool.Session(nil)
-	c := session.DB(os.Getenv("DB_NAME")).C("todo")
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
-	// Validate string if hex
-	if !bson.IsObjectIdHex(id) {
+	docID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
 		return 0, errors.New("not found")
 	}
 
-	// Find data
-	total, err := c.FindId(bson.ObjectIdHex(id)).Count()
+	collection := m.client.Database(os.Getenv("DB_NAME")).Collection("todo")
+	total, err := collection.CountDocuments(ctx, bson.M{"_id": docID})
 	if err != nil {
-		return total, err
+		return 0, err
 	}
 
-	return total, nil
+	if total <= 0 {
+		return 0, errors.New("not found")
+	}
+
+	return int(total), nil
 }
 
 // Store - store todo
-func (m *mongoTodoRepository) Store(value interface{}) (*models.Todo, error) {
-	session := m.pool.Session(nil)
-	c := session.DB(os.Getenv("DB_NAME")).C("todo")
-	result := &models.Todo{}
+func (m *mongoTodoRepository) Store(value bson.M) (*models.Todo, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
-	// Insert data
-	info, err := c.UpsertId(bson.NewObjectId(), value)
+	collection := m.client.Database(os.Getenv("DB_NAME")).Collection("todo")
+
+	res, err := collection.InsertOne(ctx, value)
 	if err != nil {
-		return result, err
+		return &models.Todo{}, err
 	}
 
-	// Find data
-	err = c.FindId(info.UpsertedId).One(&result)
-	if err != nil {
-		return result, err
+	result := &models.Todo{
+		ID:          res.InsertedID.(primitive.ObjectID),
+		Title:       value["title"].(string),
+		Description: value["description"].(string),
 	}
 
 	return result, nil
 }
 
 // Update - update todo
-func (m *mongoTodoRepository) Update(id string, value interface{}) error {
-	session := m.pool.Session(nil)
-	c := session.DB(os.Getenv("DB_NAME")).C("todo")
+func (m *mongoTodoRepository) Update(id string, value bson.D) (*models.Todo, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
-	// Validate string if hex
-	if !bson.IsObjectIdHex(id) {
-		return errors.New("not valid")
-	}
-
-	// Find data
-	err := c.Update(bson.M{"_id": bson.ObjectIdHex(id)}, value)
+	docID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		return err
+		return nil, errors.New("not found")
 	}
 
-	return nil
+	collection := m.client.Database(os.Getenv("DB_NAME")).Collection("todo")
+
+	_, err = collection.UpdateOne(ctx, bson.M{"_id": docID}, bson.D{{Key: "$set", Value: value}})
+	if err != nil {
+		return nil, err
+	}
+
+	result := &models.Todo{
+		ID:          docID,
+		Title:       value[0].Value.(string),
+		Description: value[1].Value.(string),
+	}
+
+	return result, nil
 }
 
 // Delete - delete todo
 func (m *mongoTodoRepository) Delete(id string) error {
-	session := m.pool.Session(nil)
-	c := session.DB(os.Getenv("DB_NAME")).C("todo")
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
-	// Validate string if hex
-	if !bson.IsObjectIdHex(id) {
-		return errors.New("not valid")
+	collection := m.client.Database(os.Getenv("DB_NAME")).Collection("todo")
+
+	docID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return errors.New("not found")
 	}
 
-	// Find data
-	err := c.Remove(bson.M{"_id": bson.ObjectIdHex(id)})
+	result, err := collection.DeleteOne(ctx, bson.M{"_id": docID})
 	if err != nil {
 		return err
+	}
+
+	if result.DeletedCount <= 0 {
+		return errors.New("not found")
 	}
 
 	return nil

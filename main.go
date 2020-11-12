@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/getsentry/sentry-go"
@@ -14,13 +13,13 @@ import (
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/render"
 	"github.com/joho/godotenv"
-	"github.com/juju/mgosession"
 	"github.com/sirupsen/logrus"
 
 	apis "./apis"
-	config "./config"
+	"./config"
 	repository "./repository"
 	services "./services"
+	"./utils"
 	"./utils/response"
 )
 
@@ -62,8 +61,7 @@ func PrintAllRoutes(router *chi.Mux) {
 		return nil
 	}
 	if err := chi.Walk(router, walkFunc); err != nil {
-		logrus.Panicf("Logging err: %s\n", err.Error()) // panic if there is an error
-		sentry.CaptureException(err)
+		utils.CaptureError(err)
 	}
 }
 
@@ -71,24 +69,12 @@ func main() {
 	// Load environment variables
 	err := godotenv.Load()
 	if err != nil {
-		logrus.Error("Error loading .env file")
-		sentry.CaptureException(errors.New("Error loading .env file"))
+		utils.CaptureError(errors.New("Error loading .env file"))
 	}
 
-	// Connect Mgo Database
-	session, err := config.InitMgo()
-	if err != nil {
-		logrus.Error(err)
-		sentry.CaptureException(err)
-
-		return
-	}
-	defer session.Close()
-
-	// Mgo pooling
-	configMCP, _ := strconv.Atoi(os.Getenv("MONGODB_CONNECTION_POOL"))
-	mPool := mgosession.NewPool(nil, session, configMCP)
-	defer mPool.Close()
+	// Init MongoDB
+	_, cancel, client := config.InitMongoDB()
+	defer cancel()
 
 	router := Routes()
 
@@ -101,7 +87,7 @@ func main() {
 	})
 
 	// Repository
-	todoRepo := repository.NewMongoTodoRepository(mPool)
+	todoRepo := repository.NewMongoTodoRepository(client)
 
 	// Service
 	todoService := services.NewTodoService(todoRepo)

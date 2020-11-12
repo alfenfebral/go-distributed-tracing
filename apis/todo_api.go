@@ -11,7 +11,7 @@ import (
 	response "../utils/response"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/render"
-	"gopkg.in/mgo.v2/bson"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 // Todohandler represent the httphandler for file
@@ -155,26 +155,20 @@ func (handler *Todohandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Check if exist
-	_, err := handler.TodoService.CountGetByID(id)
+	timeNow := utils.GetTimeNow()
+	// Edit data
+	_, err := handler.TodoService.Update(id, bson.D{
+		{Key: "title", Value: data.Title},
+		{Key: "description", Value: data.Description},
+		{Key: "updatedAt", Value: timeNow},
+	})
+
 	if err != nil {
 		if err.Error() == "not found" {
 			utils.ResponseNotFound(w, r, "Item not found")
 			return
 		}
 
-		utils.ResponseError(w, r, err)
-		return
-	}
-	timeNow := utils.GetTimeNow()
-
-	// Edit data
-	err = handler.TodoService.Update(id, bson.M{
-		"title":       data.Title,
-		"description": data.Description,
-		"updatedAt":   timeNow,
-	})
-	if err != nil {
 		utils.ResponseError(w, r, err)
 		return
 	}
@@ -192,28 +186,11 @@ func (handler *Todohandler) Delete(w http.ResponseWriter, r *http.Request) {
 	// Get and filter id param
 	id := chi.URLParam(r, "id")
 
-	// Check if exist
-	total, err := handler.TodoService.CountGetByID(id)
+	// Delete record
+	err := handler.TodoService.Delete(id)
 	if err != nil {
 		if err.Error() == "not found" {
 			utils.ResponseNotFound(w, r, "Item not found")
-			return
-		}
-
-		utils.ResponseError(w, r, err)
-		return
-	}
-
-	if total == 0 {
-		utils.ResponseNotFound(w, r, "Item not found")
-		return
-	}
-
-	// Delete record
-	err = handler.TodoService.Delete(id)
-	if err != nil {
-		if err.Error() == "not valid" {
-			utils.ResponseNotFound(w, r, "id not valid")
 			return
 		}
 

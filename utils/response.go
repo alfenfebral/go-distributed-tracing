@@ -3,11 +3,9 @@ package utils
 import (
 	"net/http"
 
-	"github.com/getsentry/sentry-go"
 	"github.com/go-chi/render"
 
 	response "./response"
-	"github.com/sirupsen/logrus"
 )
 
 func ResponseErrorValidation(w http.ResponseWriter, r *http.Request, err error) {
@@ -32,8 +30,7 @@ func ResponseBodyError(w http.ResponseWriter, r *http.Request, err error) {
 
 // ResponseError - send response error (500)
 func ResponseError(w http.ResponseWriter, r *http.Request, err error) {
-	logrus.Error(err)
-	sentry.CaptureException(err)
+	CaptureError(err)
 
 	render.Status(r, http.StatusInternalServerError)
 	render.JSON(w, r, response.H{

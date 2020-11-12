@@ -1,32 +1,37 @@
 package config
 
 import (
+	"context"
 	"os"
+	"time"
 
-	"github.com/getsentry/sentry-go"
+	"../utils"
 	"github.com/sirupsen/logrus"
-
-	mgo "gopkg.in/mgo.v2"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-var (
-	sessionMgo *mgo.Session
-)
+// InitMongoDB - initialize mongo
+func InitMongoDB() (context.Context, func(), *mongo.Client) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 
-// InitMgo - initialize mgo database
-func InitMgo() (*mgo.Session, error) {
-	session, err := mgo.Dial(os.Getenv("DB_URL"))
+	client, err := mongo.NewClient(options.Client().ApplyURI(os.Getenv("DB_URL")))
 	if err != nil {
-		logrus.Error(err)
-		sentry.CaptureException(err)
-
-		return session, err
+		utils.CaptureError(err)
 	}
 
-	session.SetMode(mgo.Monotonic, true)
-	logrus.Info("Connected to mongodb using mgo")
+	err = client.Connect(ctx)
+	if err != nil {
+		utils.CaptureError(err)
+	}
 
-	sessionMgo = session
+	// Checking the connection
+	err = client.Ping(context.TODO(), nil)
+	if err != nil {
+		utils.CaptureError(err)
+	}
+	logrus.Println("Database connected")
 
-	return session, nil
+	return ctx, cancel, client
 }
