@@ -6,7 +6,7 @@ require (
 	github.com/getsentry/sentry-go v0.14.0
 	github.com/go-chi/chi v1.5.4
 	github.com/go-chi/render v1.0.2
-	github.com/go-playground/validator v9.31.0+incompatible
+	github.com/go-playground/validator/v10 v10.11.1
 	github.com/iancoleman/strcase v0.2.0
 	github.com/joho/godotenv v1.4.0
 	github.com/sirupsen/logrus v1.9.0
