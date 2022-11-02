@@ -12,14 +12,14 @@ import (
 	"github.com/go-chi/render"
 )
 
-// Todohandler represent the httphandler for file
-type Todohandler struct {
+// TodoHandler represent the httphandler for file
+type TodoHandler struct {
 	TodoService services.TodoService
 }
 
 // NewTodoHTTPHandler - make http handler
 func NewTodoHTTPHandler(router *chi.Mux, service services.TodoService) {
-	handler := &Todohandler{
+	handler := &TodoHandler{
 		TodoService: service,
 	}
 
@@ -31,7 +31,7 @@ func NewTodoHTTPHandler(router *chi.Mux, service services.TodoService) {
 }
 
 // GetAll - get all todo http handler
-func (handler *Todohandler) GetAll(w http.ResponseWriter, r *http.Request) {
+func (handler *TodoHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 	qQuery := r.URL.Query().Get("q")
 	pageQuery := r.URL.Query().Get("page")
 	perPageQuery := r.URL.Query().Get("per_page")
@@ -71,7 +71,7 @@ func (handler *Todohandler) GetAll(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetByID - get todo by id http handler
-func (handler *Todohandler) GetByID(w http.ResponseWriter, r *http.Request) {
+func (handler *TodoHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 	// Get and filter id param
 	id := chi.URLParam(r, "id")
 
@@ -94,7 +94,7 @@ func (handler *Todohandler) GetByID(w http.ResponseWriter, r *http.Request) {
 }
 
 // Create - create todo http handler
-func (handler *Todohandler) Create(w http.ResponseWriter, r *http.Request) {
+func (handler *TodoHandler) Create(w http.ResponseWriter, r *http.Request) {
 	data := &models.TodoRequest{}
 	if err := render.Bind(r, data); err != nil {
 		if err.Error() == "EOF" {
@@ -121,7 +121,7 @@ func (handler *Todohandler) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 // Update - update instance by id http handler
-func (handler *Todohandler) Update(w http.ResponseWriter, r *http.Request) {
+func (handler *TodoHandler) Update(w http.ResponseWriter, r *http.Request) {
 	// Get and filter id param
 	id := chi.URLParam(r, "id")
 
@@ -160,7 +160,7 @@ func (handler *Todohandler) Update(w http.ResponseWriter, r *http.Request) {
 }
 
 // Delete - delete instance by id http handler
-func (handler *Todohandler) Delete(w http.ResponseWriter, r *http.Request) {
+func (handler *TodoHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	// Get and filter id param
 	id := chi.URLParam(r, "id")
 
