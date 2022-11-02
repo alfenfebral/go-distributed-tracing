@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"net/http"
 
 	"go-clean-architecture/models"
@@ -45,7 +44,7 @@ func (handler *Todohandler) GetAll(w http.ResponseWriter, r *http.Request) {
 		PerPage: perPageQuery,
 	})
 	if err != nil {
-		utils.ResponseErrorValidation(w, r, err)
+		response.ResponseErrorValidation(w, r, err)
 		return
 	}
 
@@ -55,22 +54,18 @@ func (handler *Todohandler) GetAll(w http.ResponseWriter, r *http.Request) {
 
 	results, totalData, err := handler.TodoService.GetAll(qQuery, perPage, offset)
 	if err != nil {
-		utils.ResponseError(w, r, err)
+		response.ResponseError(w, r, err)
 		return
 	}
 	totalPages := utils.TotalPage(totalData, perPage)
 
-	render.Status(r, http.StatusOK)
-	render.JSON(w, r, response.H{
-		"success": true,
-		"code":    http.StatusOK,
-		"message": "Get All Todo",
-		"data":    results,
-		"meta": response.H{
-			"per_page":   perPage,
-			"page":       currentPage,
-			"pageCount":  totalPages,
-			"totalCount": totalData,
+	response.ResponseOKList(w, r, &response.ResponseSuccessList{
+		Data: results,
+		Meta: &response.Meta{
+			PerPage:     perPage,
+			CurrentPage: currentPage,
+			TotalPage:   totalPages,
+			TotalData:   totalData,
 		},
 	})
 }
@@ -84,20 +79,16 @@ func (handler *Todohandler) GetByID(w http.ResponseWriter, r *http.Request) {
 	result, err := handler.TodoService.GetByID(id)
 	if err != nil {
 		if err.Error() == "not found" {
-			utils.ResponseNotFound(w, r, "Item not found")
+			response.ResponseNotFound(w, r, "Item not found")
 			return
 		}
 
-		utils.ResponseError(w, r, err)
+		response.ResponseError(w, r, err)
 		return
 	}
 
-	render.Status(r, http.StatusOK)
-	render.JSON(w, r, response.H{
-		"success": true,
-		"code":    http.StatusOK,
-		"message": "Get Todo",
-		"data":    result,
+	response.ResponseOK(w, r, &response.ResponseSuccess{
+		Data: result,
 	})
 
 }
@@ -107,11 +98,11 @@ func (handler *Todohandler) Create(w http.ResponseWriter, r *http.Request) {
 	data := &models.TodoRequest{}
 	if err := render.Bind(r, data); err != nil {
 		if err.Error() == "EOF" {
-			utils.ResponseBodyError(w, r, err)
+			response.ResponseBodyError(w, r, err)
 			return
 		}
 
-		utils.ResponseErrorValidation(w, r, err)
+		response.ResponseErrorValidation(w, r, err)
 		return
 	}
 
@@ -120,16 +111,12 @@ func (handler *Todohandler) Create(w http.ResponseWriter, r *http.Request) {
 		Description: data.Description,
 	})
 	if err != nil {
-		utils.ResponseError(w, r, err)
+		response.ResponseError(w, r, err)
 		return
 	}
 
-	render.Status(r, http.StatusCreated)
-	render.JSON(w, r, response.H{
-		"success": true,
-		"code":    http.StatusCreated,
-		"message": "Create Todo",
-		"data":    result,
+	response.ResponseCreated(w, r, &response.ResponseSuccess{
+		Data: result,
 	})
 }
 
@@ -141,11 +128,11 @@ func (handler *Todohandler) Update(w http.ResponseWriter, r *http.Request) {
 	data := &models.TodoRequest{}
 	if err := render.Bind(r, data); err != nil {
 		if err.Error() == "EOF" {
-			utils.ResponseBodyError(w, r, err)
+			response.ResponseBodyError(w, r, err)
 			return
 		}
 
-		utils.ResponseErrorValidation(w, r, err)
+		response.ResponseErrorValidation(w, r, err)
 		return
 	}
 
@@ -157,19 +144,18 @@ func (handler *Todohandler) Update(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		if err.Error() == "not found" {
-			utils.ResponseNotFound(w, r, "Item not found")
+			response.ResponseNotFound(w, r, "Item not found")
 			return
 		}
 
-		utils.ResponseError(w, r, err)
+		response.ResponseError(w, r, err)
 		return
 	}
 
-	render.Status(r, http.StatusOK)
-	render.JSON(w, r, response.H{
-		"success": true,
-		"code":    http.StatusOK,
-		"message": fmt.Sprintf("Success updated item with id %v", id),
+	response.ResponseOK(w, r, &response.ResponseSuccess{
+		Data: response.H{
+			"id": id,
+		},
 	})
 }
 
@@ -182,18 +168,17 @@ func (handler *Todohandler) Delete(w http.ResponseWriter, r *http.Request) {
 	err := handler.TodoService.Delete(id)
 	if err != nil {
 		if err.Error() == "not found" {
-			utils.ResponseNotFound(w, r, "Item not found")
+			response.ResponseNotFound(w, r, "Item not found")
 			return
 		}
 
-		utils.ResponseError(w, r, err)
+		response.ResponseError(w, r, err)
 		return
 	}
 
-	render.Status(r, http.StatusOK)
-	render.JSON(w, r, response.H{
-		"success": true,
-		"code":    http.StatusOK,
-		"message": fmt.Sprintf("Success deleted item with id %v", id),
+	response.ResponseOK(w, r, &response.ResponseSuccess{
+		Data: response.H{
+			"id": id,
+		},
 	})
 }

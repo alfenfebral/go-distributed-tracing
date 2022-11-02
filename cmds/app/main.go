@@ -20,7 +20,7 @@ import (
 	repository "go-clean-architecture/repository"
 	services "go-clean-architecture/services"
 	"go-clean-architecture/utils"
-	"go-clean-architecture/utils/response"
+	response "go-clean-architecture/utils/response"
 )
 
 func Routes() *chi.Mux {
