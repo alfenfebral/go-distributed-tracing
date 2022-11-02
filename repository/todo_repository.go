@@ -12,6 +12,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"go-clean-architecture/models"
+	"go-clean-architecture/utils"
 )
 
 // TodoRepository represent the todo repository contract
@@ -20,8 +21,8 @@ type TodoRepository interface {
 	CountFindAll(keyword string) (int, error)
 	FindById(id string) (*models.Todo, error)
 	CountFindByID(id string) (int, error)
-	Store(value bson.M) (*models.Todo, error)
-	Update(id string, value bson.D) (*models.Todo, error)
+	Store(value *models.Todo) (*models.Todo, error)
+	Update(id string, value *models.Todo) (*models.Todo, error)
 	Delete(id string) error
 }
 
@@ -142,28 +143,36 @@ func (m *mongoTodoRepository) CountFindByID(id string) (int, error) {
 }
 
 // Store - store todo
-func (m *mongoTodoRepository) Store(value bson.M) (*models.Todo, error) {
+func (m *mongoTodoRepository) Store(value *models.Todo) (*models.Todo, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	collection := m.client.Database(os.Getenv("DB_NAME")).Collection("todo")
 
-	res, err := collection.InsertOne(ctx, value)
+	timeNow := utils.GetTimeNow()
+	res, err := collection.InsertOne(ctx, bson.M{
+		"title":       value.Title,
+		"description": value.Description,
+		"createdAt":   timeNow,
+		"updatedAt":   timeNow,
+	})
 	if err != nil {
 		return &models.Todo{}, err
 	}
 
 	result := &models.Todo{
 		ID:          res.InsertedID.(primitive.ObjectID),
-		Title:       value["title"].(string),
-		Description: value["description"].(string),
+		Title:       value.Title,
+		Description: value.Description,
+		CreatedAt:   timeNow,
+		UpdatedAt:   timeNow,
 	}
 
 	return result, nil
 }
 
 // Update - update todo
-func (m *mongoTodoRepository) Update(id string, value bson.D) (*models.Todo, error) {
+func (m *mongoTodoRepository) Update(id string, value *models.Todo) (*models.Todo, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -174,15 +183,19 @@ func (m *mongoTodoRepository) Update(id string, value bson.D) (*models.Todo, err
 
 	collection := m.client.Database(os.Getenv("DB_NAME")).Collection("todo")
 
-	_, err = collection.UpdateOne(ctx, bson.M{"_id": docID}, bson.D{{Key: "$set", Value: value}})
+	timeNow := utils.GetTimeNow()
+	bsonValue := bson.D{
+		{Key: "title", Value: value.Title},
+		{Key: "description", Value: value.Description},
+		{Key: "updatedAt", Value: timeNow},
+	}
+	_, err = collection.UpdateOne(ctx, bson.M{"_id": docID}, bson.D{{Key: "$set", Value: bsonValue}})
 	if err != nil {
 		return nil, err
 	}
 
 	result := &models.Todo{
-		ID:          docID,
-		Title:       value[0].Value.(string),
-		Description: value[1].Value.(string),
+		ID: docID,
 	}
 
 	return result, nil

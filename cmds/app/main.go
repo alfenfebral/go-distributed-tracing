@@ -15,7 +15,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
 
-	apis "go-clean-architecture/apis"
+	"go-clean-architecture/handlers"
 	pkg_mongodb "go-clean-architecture/pkg/mongodb"
 	repository "go-clean-architecture/repository"
 	services "go-clean-architecture/services"
@@ -93,7 +93,7 @@ func main() {
 	todoService := services.NewTodoService(todoRepo)
 
 	// Handler
-	apis.NewTodoHTTPHandler(router, todoService)
+	handlers.NewTodoHTTPHandler(router, todoService)
 
 	// Print
 	PrintAllRoutes(router)

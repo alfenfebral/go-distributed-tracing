@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/go-playground/validator"
+	"github.com/go-playground/validator/v10"
 	"github.com/iancoleman/strcase"
 )
 
@@ -158,9 +158,5 @@ func Username(fl validator.FieldLevel) bool {
 	}
 
 	var regex = regexp.MustCompile(`^[A-Za-z0-9]+(?:[_-][A-Za-z0-9]+)*$`)
-	if !regex.MatchString(fl.Field().String()) {
-		return false
-	}
-
-	return true
+	return regex.MatchString(fl.Field().String())
 }

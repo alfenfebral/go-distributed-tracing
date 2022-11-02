@@ -3,16 +3,14 @@ package services
 import (
 	"go-clean-architecture/models"
 	"go-clean-architecture/repository"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 // TodoService represent the todo service
 type TodoService interface {
 	GetAll(keyword string, limit int, offset int) ([]*models.Todo, int, error)
 	GetByID(id string) (*models.Todo, error)
-	Create(value bson.M) (*models.Todo, error)
-	Update(id string, value bson.D) (*models.Todo, error)
+	Create(value *models.Todo) (*models.Todo, error)
+	Update(id string, value *models.Todo) (*models.Todo, error)
 	Delete(id string) error
 }
 
@@ -47,30 +45,36 @@ func (a *todoService) GetAll(keyword string, limit int, offset int) ([]*models.T
 func (a *todoService) GetByID(id string) (*models.Todo, error) {
 	res, err := a.todoRepo.FindById(id)
 	if err != nil {
-		return res, err
+		return nil, err
 	}
 
 	return res, nil
 }
 
 // Create - creating todo service
-func (a *todoService) Create(value bson.M) (*models.Todo, error) {
-	res, err := a.todoRepo.Store(value)
+func (a *todoService) Create(value *models.Todo) (*models.Todo, error) {
+	res, err := a.todoRepo.Store(&models.Todo{
+		Title:       value.Title,
+		Description: value.Description,
+	})
 	if err != nil {
-		return res, err
+		return nil, err
 	}
 
 	return res, nil
 }
 
 // Update - update todo service
-func (a *todoService) Update(id string, value bson.D) (*models.Todo, error) {
+func (a *todoService) Update(id string, value *models.Todo) (*models.Todo, error) {
 	_, err := a.todoRepo.CountFindByID(id)
 	if err != nil {
 		return nil, err
 	}
 
-	_, err = a.todoRepo.Update(id, value)
+	_, err = a.todoRepo.Update(id, &models.Todo{
+		Title:       value.Title,
+		Description: value.Description,
+	})
 	if err != nil {
 		return nil, err
 	}

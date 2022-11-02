@@ -1,4 +1,4 @@
-package apis
+package handlers
 
 import (
 	"fmt"
@@ -11,7 +11,6 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/render"
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 // Todohandler represent the httphandler for file
@@ -30,41 +29,6 @@ func NewTodoHTTPHandler(router *chi.Mux, service services.TodoService) {
 	router.Post("/todo", handler.Create)
 	router.Put("/todo/{id}", handler.Update)
 	router.Delete("/todo/{id}", handler.Delete)
-}
-
-// Create - create todo http handler
-func (handler *Todohandler) Create(w http.ResponseWriter, r *http.Request) {
-	data := &models.TodoRequest{}
-	if err := render.Bind(r, data); err != nil {
-		if err.Error() == "EOF" {
-			utils.ResponseBodyError(w, r, err)
-			return
-		}
-
-		utils.ResponseErrorValidation(w, r, err)
-		return
-	}
-	timeNow := utils.GetTimeNow()
-
-	result, err := handler.TodoService.Create(bson.M{
-		"title":       data.Title,
-		"description": data.Description,
-		"createdAt":   timeNow,
-		"updatedAt":   timeNow,
-		"deletedAt":   timeNow,
-	})
-	if err != nil {
-		utils.ResponseError(w, r, err)
-		return
-	}
-
-	render.Status(r, http.StatusCreated)
-	render.JSON(w, r, response.H{
-		"success": true,
-		"code":    http.StatusCreated,
-		"message": "Create Todo",
-		"data":    result,
-	})
 }
 
 // GetAll - get all todo http handler
@@ -138,6 +102,37 @@ func (handler *Todohandler) GetByID(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// Create - create todo http handler
+func (handler *Todohandler) Create(w http.ResponseWriter, r *http.Request) {
+	data := &models.TodoRequest{}
+	if err := render.Bind(r, data); err != nil {
+		if err.Error() == "EOF" {
+			utils.ResponseBodyError(w, r, err)
+			return
+		}
+
+		utils.ResponseErrorValidation(w, r, err)
+		return
+	}
+
+	result, err := handler.TodoService.Create(&models.Todo{
+		Title:       data.Title,
+		Description: data.Description,
+	})
+	if err != nil {
+		utils.ResponseError(w, r, err)
+		return
+	}
+
+	render.Status(r, http.StatusCreated)
+	render.JSON(w, r, response.H{
+		"success": true,
+		"code":    http.StatusCreated,
+		"message": "Create Todo",
+		"data":    result,
+	})
+}
+
 // Update - update instance by id http handler
 func (handler *Todohandler) Update(w http.ResponseWriter, r *http.Request) {
 	// Get and filter id param
@@ -154,12 +149,10 @@ func (handler *Todohandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	timeNow := utils.GetTimeNow()
 	// Edit data
-	_, err := handler.TodoService.Update(id, bson.D{
-		{Key: "title", Value: data.Title},
-		{Key: "description", Value: data.Description},
-		{Key: "updatedAt", Value: timeNow},
+	_, err := handler.TodoService.Update(id, &models.Todo{
+		Title:       data.Title,
+		Description: data.Description,
 	})
 
 	if err != nil {
