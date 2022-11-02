@@ -2,10 +2,8 @@ package utils
 
 import (
 	"fmt"
-	"reflect"
 	"regexp"
 	"strconv"
-	"strings"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/iancoleman/strcase"
@@ -16,6 +14,10 @@ var validate *validator.Validate
 // CommonError - error response format
 type CommonError struct {
 	Errors map[string]interface{} `json:"errors"`
+}
+
+func InitializeValidator() {
+	validate = validator.New()
 }
 
 func ValidatonError(err error) CommonError {
@@ -70,21 +72,6 @@ func ValidateStruct(i interface{}) error {
 	}
 
 	return err
-}
-
-func getFieldName(tag, key string, s interface{}) (fieldname string) {
-	rt := reflect.TypeOf(s)
-	if rt.Kind() != reflect.Struct {
-		panic("bad type")
-	}
-	for i := 0; i < rt.NumField(); i++ {
-		f := rt.Field(i)
-		v := strings.Split(f.Tag.Get(key), ",")[0] // use split to ignore tag "options"
-		if v == tag {
-			return f.Name
-		}
-	}
-	return ""
 }
 
 // Integer - integer only validation

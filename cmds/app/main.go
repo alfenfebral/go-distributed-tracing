@@ -66,6 +66,8 @@ func PrintAllRoutes(router *chi.Mux) {
 }
 
 func main() {
+	utils.InitializeValidator()
+
 	// Load environment variables
 	err := godotenv.Load()
 	if err != nil {
