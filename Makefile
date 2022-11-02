@@ -5,14 +5,15 @@ GOTEST=$(GO) test
 mock: 
 	mockery --dir repository --all --output mocks/repository
 	mockery --dir services --all --output mocks/services
-init-realize:
-	realize start --path="." --run main.go
 run:
-	realize start
+	air
 test:
 	go test ./...
+mock-test:
+	make mock
+	make test
 build:
-	go build -o go-clean-architecture main.go
+	go build -o go-clean-architecture cmds/app/main.go
 .PHONY: test/cover
 test/cover:
 	mkdir -p coverage
