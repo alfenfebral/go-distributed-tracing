@@ -1,8 +1,8 @@
 package services
 
 import (
-	"../models"
-	"../repository"
+	"go-clean-architecture/models"
+	"go-clean-architecture/repository"
 
 	"go.mongodb.org/mongo-driver/bson"
 )

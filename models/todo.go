@@ -4,7 +4,8 @@ import (
 	"net/http"
 	"time"
 
-	"../utils"
+	"go-clean-architecture/utils"
+
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 

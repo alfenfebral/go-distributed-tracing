@@ -4,10 +4,11 @@ import (
 	"errors"
 	"testing"
 
-	mockRepositories "../mocks/repository"
-	"../models"
-	services "../services"
-	utils "../utils"
+	mockRepositories "go-clean-architecture/mocks/repository"
+	"go-clean-architecture/models"
+	services "go-clean-architecture/services"
+	utils "go-clean-architecture/utils"
+
 	"github.com/bxcodec/faker"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -31,7 +32,8 @@ func TestGetAllSuccess(t *testing.T) {
 	// Mock service in handler
 	todoService := services.NewTodoService(mockRepository)
 
-	todoService.GetAll("keyword", 10, 0)
+	_, _, err = todoService.GetAll("keyword", 10, 0)
+	assert.NoError(t, err)
 }
 
 // TestGetAllDatabaseError - testing GetAll
@@ -51,7 +53,8 @@ func TestGetAllFailedDatabaseError(t *testing.T) {
 	// Mock service in handler
 	todoService := services.NewTodoService(mockRepository)
 
-	todoService.GetAll("keyword", 10, 0)
+	_, _, err = todoService.GetAll("keyword", 10, 0)
+	assert.NoError(t, err)
 
 	mockRepository = new(mockRepositories.TodoRepository)
 
@@ -62,7 +65,8 @@ func TestGetAllFailedDatabaseError(t *testing.T) {
 	// Mock service in handler
 	todoService = services.NewTodoService(mockRepository)
 
-	todoService.GetAll("keyword", 10, 0)
+	_, _, err = todoService.GetAll("keyword", 10, 0)
+	assert.NoError(t, err)
 
 	mockRepository = new(mockRepositories.TodoRepository)
 
@@ -73,7 +77,8 @@ func TestGetAllFailedDatabaseError(t *testing.T) {
 	// Mock service in handler
 	todoService = services.NewTodoService(mockRepository)
 
-	todoService.GetAll("keyword", 10, 0)
+	_, _, err = todoService.GetAll("keyword", 10, 0)
+	assert.NoError(t, err)
 }
 
 // TestGetByIDSuccess - testing GetByID
@@ -90,7 +95,8 @@ func TestGetByIDSuccess(t *testing.T) {
 	// Mock service in handler
 	todoService := services.NewTodoService(mockRepository)
 
-	todoService.GetByID("5f9e9dc1c5e4cd34e6ac0bb7")
+	_, err = todoService.GetByID("5f9e9dc1c5e4cd34e6ac0bb7")
+	assert.NoError(t, err)
 }
 
 // TestGetByIDFailedDatabaseError - testing GetByID
@@ -126,13 +132,14 @@ func TestCreateSuccess(t *testing.T) {
 
 	timeNow := utils.GetTimeNow()
 
-	todoService.Create(bson.M{
+	_, err = todoService.Create(bson.M{
 		"title":       "lorem ipsum",
 		"description": "lorem ipsum",
 		"createdAt":   timeNow,
 		"updatedAt":   timeNow,
 		"deletedAt":   timeNow,
 	})
+	assert.NoError(t, err)
 }
 
 // TestCreateFailedDatabaseError - testing Create

@@ -3,7 +3,8 @@ package utils_test
 import (
 	"testing"
 
-	utils "./"
+	"go-clean-architecture/utils"
+
 	"github.com/stretchr/testify/assert"
 )
 

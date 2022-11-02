@@ -2,13 +2,13 @@ package apis
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 
-	"../models"
-	"../services"
-	"../utils"
-	response "../utils/response"
+	"go-clean-architecture/models"
+	"go-clean-architecture/services"
+	"go-clean-architecture/utils"
+	response "go-clean-architecture/utils/response"
+
 	"github.com/go-chi/chi"
 	"github.com/go-chi/render"
 	"go.mongodb.org/mongo-driver/bson"
@@ -81,7 +81,6 @@ func (handler *Todohandler) GetAll(w http.ResponseWriter, r *http.Request) {
 		PerPage: perPageQuery,
 	})
 	if err != nil {
-		log.Printf(err.Error())
 		utils.ResponseErrorValidation(w, r, err)
 		return
 	}

@@ -5,7 +5,7 @@ import (
 
 	"github.com/go-chi/render"
 
-	response "./response"
+	response "go-clean-architecture/utils/response"
 )
 
 func ResponseErrorValidation(w http.ResponseWriter, r *http.Request, err error) {

@@ -15,12 +15,12 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
 
-	apis "./apis"
-	"./config"
-	repository "./repository"
-	services "./services"
-	"./utils"
-	"./utils/response"
+	apis "go-clean-architecture/apis"
+	pkg_mongodb "go-clean-architecture/pkg/mongodb"
+	repository "go-clean-architecture/repository"
+	services "go-clean-architecture/services"
+	"go-clean-architecture/utils"
+	"go-clean-architecture/utils/response"
 )
 
 func Routes() *chi.Mux {
@@ -73,7 +73,7 @@ func main() {
 	}
 
 	// Init MongoDB
-	_, cancel, client := config.InitMongoDB()
+	_, cancel, client := pkg_mongodb.InitMongoDB()
 	defer cancel()
 
 	router := Routes()

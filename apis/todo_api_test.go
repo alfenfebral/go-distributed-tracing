@@ -10,10 +10,10 @@ import (
 	"strings"
 	"testing"
 
-	"../apis"
-	mockServices "../mocks/services"
-	"../models"
-	"../utils"
+	"go-clean-architecture/apis"
+	mockServices "go-clean-architecture/mocks/services"
+	"go-clean-architecture/models"
+	"go-clean-architecture/utils"
 
 	"github.com/go-chi/chi"
 	"github.com/stretchr/testify/assert"
