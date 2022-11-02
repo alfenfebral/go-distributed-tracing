@@ -1,11 +1,12 @@
-package config
+package mongodb
 
 import (
 	"context"
 	"os"
 	"time"
 
-	"../utils"
+	"go-clean-architecture/utils"
+
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
