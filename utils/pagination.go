@@ -26,8 +26,8 @@ func CurrentPage(value string) int {
 }
 
 // TotalPage - get total pages
-func TotalPage(total int, perPage int) float64 {
-	return math.Ceil(float64(total) / float64(perPage))
+func TotalPage(total int, perPage int) int {
+	return int(math.Ceil(float64(total) / float64(perPage)))
 }
 
 // Offset - offset of pages
