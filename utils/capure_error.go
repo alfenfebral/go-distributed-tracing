@@ -8,14 +8,8 @@ import (
 )
 
 func CaptureError(err error) {
-	if os.Getenv("GO_ENV") != "test" {
-		if os.Getenv("DEBUG") == "staging" || os.Getenv("DEBUG") == "dev" {
-			logrus.Error(err)
-			sentry.CaptureException(err)
-		} else if os.Getenv("DEBUG") == "prod" {
-			sentry.CaptureException(err)
-		} else {
-			logrus.Error(err)
-		}
+	if os.Getenv("ENABLE_SENTRY_LOG") == "true" {
+		sentry.CaptureException(err)
 	}
+	logrus.Error(err)
 }
