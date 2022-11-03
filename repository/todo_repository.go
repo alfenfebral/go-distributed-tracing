@@ -11,8 +11,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
-	"go-clean-architecture/models"
-	"go-clean-architecture/utils"
+	"go-distributed-tracing/models"
+	"go-distributed-tracing/utils"
 )
 
 // TodoRepository represent the todo repository contract

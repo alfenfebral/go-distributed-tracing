@@ -1,8 +1,8 @@
 package services
 
 import (
-	"go-clean-architecture/models"
-	"go-clean-architecture/repository"
+	"go-distributed-tracing/models"
+	"go-distributed-tracing/repository"
 )
 
 // TodoService represent the todo service

@@ -2,7 +2,7 @@ package utils
 
 import (
 	"fmt"
-	"go-clean-architecture/utils"
+	"go-distributed-tracing/utils"
 	"net/http"
 
 	"github.com/go-chi/render"

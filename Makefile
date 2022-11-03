@@ -13,7 +13,7 @@ mock-test:
 	make mock
 	make test
 build:
-	go build -o go-clean-architecture cmds/app/main.go
+	go build -o go-distributed-tracing cmds/app/main.go
 .PHONY: test/cover
 test/cover:
 	mkdir -p coverage

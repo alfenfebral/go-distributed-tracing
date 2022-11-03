@@ -2,9 +2,9 @@ package services_test
 
 import (
 	"errors"
-	mockRepositories "go-clean-architecture/mocks/repository"
-	"go-clean-architecture/models"
-	"go-clean-architecture/services"
+	mockRepositories "go-distributed-tracing/mocks/repository"
+	"go-distributed-tracing/models"
+	"go-distributed-tracing/services"
 	"testing"
 
 	"github.com/stretchr/testify/assert"

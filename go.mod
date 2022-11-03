@@ -1,4 +1,4 @@
-module go-clean-architecture
+module go-distributed-tracing
 
 go 1.18
 
@@ -35,7 +35,6 @@ require (
 
 require (
 	github.com/ajg/form v1.5.1 // indirect
-	github.com/bxcodec/faker v2.0.1+incompatible
 	github.com/go-playground/locales v0.14.0 // indirect
 	github.com/go-playground/universal-translator v0.18.0 // indirect
 	github.com/golang/snappy v0.0.4 // indirect

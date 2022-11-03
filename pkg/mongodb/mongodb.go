@@ -5,7 +5,7 @@ import (
 	"os"
 	"time"
 
-	"go-clean-architecture/utils"
+	"go-distributed-tracing/utils"
 
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/mongo"

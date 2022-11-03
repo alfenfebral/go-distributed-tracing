@@ -2,7 +2,7 @@ package utils_test
 
 import (
 	"errors"
-	"go-clean-architecture/utils"
+	"go-distributed-tracing/utils"
 	"os"
 	"testing"
 )

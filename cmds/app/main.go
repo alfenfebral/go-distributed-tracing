@@ -15,12 +15,12 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
 
-	"go-clean-architecture/handlers"
-	pkg_mongodb "go-clean-architecture/pkg/mongodb"
-	repository "go-clean-architecture/repository"
-	services "go-clean-architecture/services"
-	"go-clean-architecture/utils"
-	response "go-clean-architecture/utils/response"
+	"go-distributed-tracing/handlers"
+	pkg_mongodb "go-distributed-tracing/pkg/mongodb"
+	repository "go-distributed-tracing/repository"
+	services "go-distributed-tracing/services"
+	"go-distributed-tracing/utils"
+	response "go-distributed-tracing/utils/response"
 )
 
 func Routes() *chi.Mux {

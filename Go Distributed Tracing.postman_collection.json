@@ -1,7 +1,7 @@
 {
 	"info": {
 		"_postman_id": "16581a90-00d7-4c00-b7d2-5c4b68da56dd",
-		"name": "Go Clean Architecture",
+		"name": "Go Distributed Tracing",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "1976379"
 	},

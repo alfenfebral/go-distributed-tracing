@@ -3,10 +3,10 @@ package handlers
 import (
 	"net/http"
 
-	"go-clean-architecture/models"
-	"go-clean-architecture/services"
-	"go-clean-architecture/utils"
-	response "go-clean-architecture/utils/response"
+	"go-distributed-tracing/models"
+	"go-distributed-tracing/services"
+	"go-distributed-tracing/utils"
+	response "go-distributed-tracing/utils/response"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/render"

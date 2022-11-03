@@ -8,12 +8,12 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"go-clean-architecture/handlers"
-	"go-clean-architecture/utils"
+	"go-distributed-tracing/handlers"
+	"go-distributed-tracing/utils"
 
-	mockServices "go-clean-architecture/mocks/services"
+	mockServices "go-distributed-tracing/mocks/services"
 
-	"go-clean-architecture/models"
+	"go-distributed-tracing/models"
 
 	"github.com/go-chi/chi"
 	"github.com/stretchr/testify/assert"
