@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"os"
-	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -19,11 +18,11 @@ import (
 type TodoRepository interface {
 	FindAll(ctx context.Context, keyword string, limit int, offset int) ([]*models.Todo, error)
 	CountFindAll(ctx context.Context, keyword string) (int, error)
-	FindById(id string) (*models.Todo, error)
-	CountFindByID(id string) (int, error)
-	Store(value *models.Todo) (*models.Todo, error)
-	Update(id string, value *models.Todo) (*models.Todo, error)
-	Delete(id string) error
+	FindById(ctx context.Context, id string) (*models.Todo, error)
+	CountFindByID(ctx context.Context, id string) (int, error)
+	Store(ctx context.Context, value *models.Todo) (*models.Todo, error)
+	Update(ctx context.Context, id string, value *models.Todo) (*models.Todo, error)
+	Delete(ctx context.Context, id string) error
 }
 
 type mongoTodoRepository struct {
@@ -89,10 +88,7 @@ func (m *mongoTodoRepository) CountFindAll(ctx context.Context, keyword string) 
 }
 
 // FindById - find todo by id
-func (m *mongoTodoRepository) FindById(id string) (*models.Todo, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
+func (m *mongoTodoRepository) FindById(ctx context.Context, id string) (*models.Todo, error) {
 	docID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return nil, errors.New("not found")
@@ -114,10 +110,7 @@ func (m *mongoTodoRepository) FindById(id string) (*models.Todo, error) {
 }
 
 // CountFindByID - find count todo by id
-func (m *mongoTodoRepository) CountFindByID(id string) (int, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
+func (m *mongoTodoRepository) CountFindByID(ctx context.Context, id string) (int, error) {
 	docID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return 0, errors.New("not found")
@@ -137,10 +130,7 @@ func (m *mongoTodoRepository) CountFindByID(id string) (int, error) {
 }
 
 // Store - store todo
-func (m *mongoTodoRepository) Store(value *models.Todo) (*models.Todo, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
+func (m *mongoTodoRepository) Store(ctx context.Context, value *models.Todo) (*models.Todo, error) {
 	collection := m.client.Database(os.Getenv("DB_NAME")).Collection("todo")
 
 	timeNow := utils.GetTimeNow()
@@ -166,10 +156,7 @@ func (m *mongoTodoRepository) Store(value *models.Todo) (*models.Todo, error) {
 }
 
 // Update - update todo
-func (m *mongoTodoRepository) Update(id string, value *models.Todo) (*models.Todo, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
+func (m *mongoTodoRepository) Update(ctx context.Context, id string, value *models.Todo) (*models.Todo, error) {
 	docID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return nil, errors.New("not found")
@@ -196,10 +183,7 @@ func (m *mongoTodoRepository) Update(id string, value *models.Todo) (*models.Tod
 }
 
 // Delete - delete todo
-func (m *mongoTodoRepository) Delete(id string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
+func (m *mongoTodoRepository) Delete(ctx context.Context, id string) error {
 	collection := m.client.Database(os.Getenv("DB_NAME")).Collection("todo")
 
 	docID, err := primitive.ObjectIDFromHex(id)

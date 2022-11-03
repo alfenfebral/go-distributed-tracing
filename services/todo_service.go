@@ -11,10 +11,10 @@ import (
 // TodoService represent the todo service
 type TodoService interface {
 	GetAll(ctx context.Context, keyword string, limit int, offset int) ([]*models.Todo, int, error)
-	GetByID(id string) (*models.Todo, error)
-	Create(value *models.Todo) (*models.Todo, error)
-	Update(id string, value *models.Todo) (*models.Todo, error)
-	Delete(id string) error
+	GetByID(ctx context.Context, id string) (*models.Todo, error)
+	Create(ctx context.Context, value *models.Todo) (*models.Todo, error)
+	Update(ctx context.Context, id string, value *models.Todo) (*models.Todo, error)
+	Delete(ctx context.Context, id string) error
 }
 
 type todoService struct {
@@ -30,7 +30,7 @@ func NewTodoService(a repository.TodoRepository) TodoService {
 
 // GetAll - get all todo service
 func (a *todoService) GetAll(ctx context.Context, keyword string, limit int, offset int) ([]*models.Todo, int, error) {
-	_, span := otel.Tracer("TodoService").Start(ctx, "TodoService.GetAll")
+	ctx, span := otel.Tracer("TodoService").Start(ctx, "TodoService.GetAll")
 	defer span.End()
 
 	res, err := a.todoRepo.FindAll(ctx, keyword, limit, offset)
@@ -48,8 +48,11 @@ func (a *todoService) GetAll(ctx context.Context, keyword string, limit int, off
 }
 
 // GetByID - get todo by id service
-func (a *todoService) GetByID(id string) (*models.Todo, error) {
-	res, err := a.todoRepo.FindById(id)
+func (a *todoService) GetByID(ctx context.Context, id string) (*models.Todo, error) {
+	ctx, span := otel.Tracer("TodoService").Start(ctx, "TodoService.GetByID")
+	defer span.End()
+
+	res, err := a.todoRepo.FindById(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -58,8 +61,11 @@ func (a *todoService) GetByID(id string) (*models.Todo, error) {
 }
 
 // Create - creating todo service
-func (a *todoService) Create(value *models.Todo) (*models.Todo, error) {
-	res, err := a.todoRepo.Store(&models.Todo{
+func (a *todoService) Create(ctx context.Context, value *models.Todo) (*models.Todo, error) {
+	ctx, span := otel.Tracer("TodoService").Start(ctx, "TodoService.Create")
+	defer span.End()
+
+	res, err := a.todoRepo.Store(ctx, &models.Todo{
 		Title:       value.Title,
 		Description: value.Description,
 	})
@@ -71,13 +77,16 @@ func (a *todoService) Create(value *models.Todo) (*models.Todo, error) {
 }
 
 // Update - update todo service
-func (a *todoService) Update(id string, value *models.Todo) (*models.Todo, error) {
-	_, err := a.todoRepo.CountFindByID(id)
+func (a *todoService) Update(ctx context.Context, id string, value *models.Todo) (*models.Todo, error) {
+	ctx, span := otel.Tracer("TodoService").Start(ctx, "TodoService.Update")
+	defer span.End()
+
+	_, err := a.todoRepo.CountFindByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	_, err = a.todoRepo.Update(id, &models.Todo{
+	_, err = a.todoRepo.Update(ctx, id, &models.Todo{
 		Title:       value.Title,
 		Description: value.Description,
 	})
@@ -89,8 +98,11 @@ func (a *todoService) Update(id string, value *models.Todo) (*models.Todo, error
 }
 
 // Delete - delete todo service
-func (a *todoService) Delete(id string) error {
-	err := a.todoRepo.Delete(id)
+func (a *todoService) Delete(ctx context.Context, id string) error {
+	ctx, span := otel.Tracer("TodoService").Start(ctx, "TodoService.Delete")
+	defer span.End()
+
+	err := a.todoRepo.Delete(ctx, id)
 	if err != nil {
 		return err
 	}
