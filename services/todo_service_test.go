@@ -2,266 +2,181 @@ package services_test
 
 import (
 	"errors"
-	"testing"
-
 	mockRepositories "go-clean-architecture/mocks/repository"
 	"go-clean-architecture/models"
-	services "go-clean-architecture/services"
-	utils "go-clean-architecture/utils"
+	"go-clean-architecture/services"
+	"testing"
 
-	"github.com/bxcodec/faker"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"go.mongodb.org/mongo-driver/bson"
 )
 
-// TestGetAllSuccess - testing GetAll
-func TestGetAllSuccess(t *testing.T) {
-	var mockTodo models.Todo
-	err := faker.FakeData(&mockTodo)
-	assert.NoError(t, err)
-	mockListTodo := make([]*models.Todo, 0)
-	mockListTodo = append(mockListTodo, &mockTodo)
+var ErrDefault error = errors.New("error")
+var DefaultID string = "1"
 
-	mockRepository := new(mockRepositories.TodoRepository)
+func TestTodoGetAll(t *testing.T) {
+	t.Run("success when find all", func(t *testing.T) {
+		mockList := make([]*models.Todo, 0)
+		mockList = append(mockList, &models.Todo{})
 
-	// Mock GetAll service
-	mockRepository.On("FindAll", mock.Anything, mock.Anything, mock.Anything).Return(mockListTodo, nil)
-	mockRepository.On("CountFindAll", mock.Anything).Return(10, nil)
+		mockRepository := new(mockRepositories.TodoRepository)
+		service := services.NewTodoService(mockRepository)
 
-	// Mock service in handler
-	todoService := services.NewTodoService(mockRepository)
+		mockRepository.On("FindAll", mock.AnythingOfType("string"), mock.AnythingOfType("int"), mock.AnythingOfType("int")).Return(mockList, nil)
+		mockRepository.On("CountFindAll", mock.AnythingOfType("string")).Return(10, nil)
 
-	_, _, err = todoService.GetAll("keyword", 10, 0)
-	assert.NoError(t, err)
-}
+		results, count, err := service.GetAll("keyword", 10, 0)
 
-// TestGetAllDatabaseError - testing GetAll
-func TestGetAllFailedDatabaseError(t *testing.T) {
-	var mockTodo models.Todo
-	err := faker.FakeData(&mockTodo)
-	assert.NoError(t, err)
-	mockListTodo := make([]*models.Todo, 0)
-	mockListTodo = append(mockListTodo, &mockTodo)
-
-	mockRepository := new(mockRepositories.TodoRepository)
-
-	// Mock GetAll service
-	mockRepository.On("FindAll", mock.Anything, mock.Anything, mock.Anything).Return(mockListTodo, nil)
-	mockRepository.On("CountFindAll", mock.Anything).Return(10, nil)
-
-	// Mock service in handler
-	todoService := services.NewTodoService(mockRepository)
-
-	_, _, err = todoService.GetAll("keyword", 10, 0)
-	assert.NoError(t, err)
-
-	mockRepository = new(mockRepositories.TodoRepository)
-
-	// Mock GetAll service
-	mockRepository.On("FindAll", mock.Anything, mock.Anything, mock.Anything).Return(mockListTodo, errors.New(""))
-	mockRepository.On("CountFindAll", mock.Anything).Return(10, nil)
-
-	// Mock service in handler
-	todoService = services.NewTodoService(mockRepository)
-
-	_, _, err = todoService.GetAll("keyword", 10, 0)
-	assert.NoError(t, err)
-
-	mockRepository = new(mockRepositories.TodoRepository)
-
-	// Mock GetAll service
-	mockRepository.On("FindAll", mock.Anything, mock.Anything, mock.Anything).Return(mockListTodo, nil)
-	mockRepository.On("CountFindAll", mock.Anything).Return(10, errors.New(""))
-
-	// Mock service in handler
-	todoService = services.NewTodoService(mockRepository)
-
-	_, _, err = todoService.GetAll("keyword", 10, 0)
-	assert.NoError(t, err)
-}
-
-// TestGetByIDSuccess - testing GetByID
-func TestGetByIDSuccess(t *testing.T) {
-	var mockTodo models.Todo
-	err := faker.FakeData(&mockTodo)
-	assert.NoError(t, err)
-
-	mockRepository := new(mockRepositories.TodoRepository)
-
-	// Mock GetAll service
-	mockRepository.On("FindById", mock.AnythingOfType("string")).Return(&mockTodo, nil)
-
-	// Mock service in handler
-	todoService := services.NewTodoService(mockRepository)
-
-	_, err = todoService.GetByID("5f9e9dc1c5e4cd34e6ac0bb7")
-	assert.NoError(t, err)
-}
-
-// TestGetByIDFailedDatabaseError - testing GetByID
-func TestGetByIDFailedDatabaseError(t *testing.T) {
-	var mockTodo models.Todo
-	err := faker.FakeData(&mockTodo)
-	assert.NoError(t, err)
-
-	mockRepository := new(mockRepositories.TodoRepository)
-
-	// Mock GetAll service
-	mockRepository.On("FindById", mock.AnythingOfType("string")).Return(&mockTodo, errors.New(""))
-
-	// Mock service in handler
-	todoService := services.NewTodoService(mockRepository)
-
-	todoService.GetByID("5f9e9dc1c5e4cd34e6ac0bb7")
-}
-
-// TestCreateSuccess - testing Create
-func TestCreateSuccess(t *testing.T) {
-	var mockTodo models.Todo
-	err := faker.FakeData(&mockTodo)
-	assert.NoError(t, err)
-
-	mockRepository := new(mockRepositories.TodoRepository)
-
-	// Mock GetAll service
-	mockRepository.On("Store", mock.AnythingOfType("primitive.M")).Return(&mockTodo, nil)
-
-	// Mock service in handler
-	todoService := services.NewTodoService(mockRepository)
-
-	timeNow := utils.GetTimeNow()
-
-	_, err = todoService.Create(bson.M{
-		"title":       "lorem ipsum",
-		"description": "lorem ipsum",
-		"createdAt":   timeNow,
-		"updatedAt":   timeNow,
-		"deletedAt":   timeNow,
+		assert.NoError(t, err)
+		assert.Equal(t, count, 10)
+		assert.Equal(t, mockList, results)
 	})
-	assert.NoError(t, err)
-}
 
-// TestCreateFailedDatabaseError - testing Create
-func TestCreateFailedDatabaseError(t *testing.T) {
-	var mockTodo models.Todo
-	err := faker.FakeData(&mockTodo)
-	assert.NoError(t, err)
+	t.Run("error when find all", func(t *testing.T) {
+		mockRepository := new(mockRepositories.TodoRepository)
+		service := services.NewTodoService(mockRepository)
 
-	mockRepository := new(mockRepositories.TodoRepository)
+		mockRepository.On("FindAll", mock.AnythingOfType("string"), mock.AnythingOfType("int"), mock.AnythingOfType("int")).Return(nil, ErrDefault)
+		mockRepository.On("CountFindAll", mock.AnythingOfType("string")).Return(10, nil)
+		results, count, err := service.GetAll("keyword", 10, 0)
 
-	// Mock GetAll service
-	mockRepository.On("Store", mock.AnythingOfType("primitive.M")).Return(&mockTodo, errors.New(""))
+		assert.Nil(t, results)
+		assert.Equal(t, 0, count)
+		assert.Error(t, err)
+	})
 
-	// Mock service in handler
-	todoService := services.NewTodoService(mockRepository)
+	t.Run("error when count find all", func(t *testing.T) {
+		mockRepository := new(mockRepositories.TodoRepository)
+		service := services.NewTodoService(mockRepository)
 
-	timeNow := utils.GetTimeNow()
+		mockRepository.On("FindAll", mock.AnythingOfType("string"), mock.AnythingOfType("int"), mock.AnythingOfType("int")).Return(nil, nil)
+		mockRepository.On("CountFindAll", mock.AnythingOfType("string")).Return(10, ErrDefault)
 
-	todoService.Create(bson.M{
-		"title":       "lorem ipsum",
-		"description": "lorem ipsum",
-		"createdAt":   timeNow,
-		"updatedAt":   timeNow,
-		"deletedAt":   timeNow,
+		results, count, err := service.GetAll("keyword", 10, 0)
+
+		assert.Nil(t, results)
+		assert.Equal(t, 0, count)
+		assert.Error(t, err)
 	})
 }
 
-// TestUpdateSuccess - testing Update
-func TestUpdateSuccess(t *testing.T) {
-	var mockTodo models.Todo
-	err := faker.FakeData(&mockTodo)
-	assert.NoError(t, err)
+func TestTodoGetByID(t *testing.T) {
+	t.Run("success when find by id", func(t *testing.T) {
+		var mockTodo = &models.Todo{}
 
-	mockRepository := new(mockRepositories.TodoRepository)
+		mockRepository := new(mockRepositories.TodoRepository)
+		service := services.NewTodoService(mockRepository)
 
-	// Mock GetAll service
-	mockRepository.On("CountFindByID", mock.AnythingOfType("string")).Return(1, nil)
-	mockRepository.On("Update", mock.AnythingOfType("string"), mock.AnythingOfType("primitive.D")).Return(&mockTodo, nil)
+		mockRepository.On("FindById", mock.AnythingOfType("string")).Return(mockTodo, nil)
 
-	// Mock service in handler
-	todoService := services.NewTodoService(mockRepository)
+		result, err := service.GetByID(DefaultID)
 
-	timeNow := utils.GetTimeNow()
+		assert.NoError(t, err)
+		assert.Equal(t, mockTodo, result)
+	})
 
-	todoService.Update("5f9e9dc1c5e4cd34e6ac0bb7", bson.D{
-		{Key: "title", Value: "lorem ipsum"},
-		{Key: "description", Value: "lorem ipsum"},
-		{Key: "updatedAt", Value: timeNow},
+	t.Run("error when find by id", func(t *testing.T) {
+		mockRepository := new(mockRepositories.TodoRepository)
+		service := services.NewTodoService(mockRepository)
+
+		mockRepository.On("FindById", mock.AnythingOfType("string")).Return(nil, ErrDefault)
+		result, err := service.GetByID(DefaultID)
+
+		assert.Nil(t, result)
+		assert.Error(t, err)
 	})
 }
 
-// TestUpdateFailedDatabaseError - testing Update
-func TestUpdateFailedDatabaseError(t *testing.T) {
-	var mockTodo models.Todo
-	err := faker.FakeData(&mockTodo)
-	assert.NoError(t, err)
+func TestTodoCreate(t *testing.T) {
+	t.Run("success when create", func(t *testing.T) {
+		var mockTodo = &models.Todo{}
 
-	mockRepository := new(mockRepositories.TodoRepository)
+		mockRepository := new(mockRepositories.TodoRepository)
+		service := services.NewTodoService(mockRepository)
 
-	// Mock GetAll service
-	mockRepository.On("CountFindByID", mock.AnythingOfType("string")).Return(1, errors.New(""))
-	mockRepository.On("Update", mock.AnythingOfType("string"), mock.AnythingOfType("primitive.D")).Return(&mockTodo, nil)
+		mockRepository.On("Store", mock.AnythingOfType("*models.Todo")).Return(mockTodo, nil)
 
-	// Mock service in handler
-	todoService := services.NewTodoService(mockRepository)
+		result, err := service.Create(&models.Todo{})
 
-	timeNow := utils.GetTimeNow()
-
-	todoService.Update("5f9e9dc1c5e4cd34e6ac0bb7", bson.D{
-		{Key: "title", Value: "lorem ipsum"},
-		{Key: "description", Value: "lorem ipsum"},
-		{Key: "updatedAt", Value: timeNow},
+		assert.NoError(t, err)
+		assert.Equal(t, mockTodo, result)
 	})
 
-	mockRepository = new(mockRepositories.TodoRepository)
+	t.Run("error when create", func(t *testing.T) {
+		mockRepository := new(mockRepositories.TodoRepository)
+		service := services.NewTodoService(mockRepository)
 
-	// Mock GetAll service
-	mockRepository.On("CountFindByID", mock.AnythingOfType("string")).Return(1, nil)
-	mockRepository.On("Update", mock.AnythingOfType("string"), mock.AnythingOfType("primitive.D")).Return(&mockTodo, errors.New(""))
+		mockRepository.On("Store", mock.AnythingOfType("*models.Todo")).Return(nil, ErrDefault)
+		result, err := service.Create(&models.Todo{})
 
-	// Mock service in handler
-	todoService = services.NewTodoService(mockRepository)
-
-	timeNow = utils.GetTimeNow()
-
-	todoService.Update("5f9e9dc1c5e4cd34e6ac0bb7", bson.D{
-		{Key: "title", Value: "lorem ipsum"},
-		{Key: "description", Value: "lorem ipsum"},
-		{Key: "updatedAt", Value: timeNow},
+		assert.Nil(t, result)
+		assert.Error(t, err)
 	})
 }
 
-// TestDeleteSuccess - testing Delete
-func TestDeleteSuccess(t *testing.T) {
-	var mockTodo models.Todo
-	err := faker.FakeData(&mockTodo)
-	assert.NoError(t, err)
+func TestTodoUpdate(t *testing.T) {
+	t.Run("success when update", func(t *testing.T) {
+		var mockTodo = &models.Todo{}
 
-	mockRepository := new(mockRepositories.TodoRepository)
+		mockRepository := new(mockRepositories.TodoRepository)
+		service := services.NewTodoService(mockRepository)
 
-	// Mock GetAll service
-	mockRepository.On("Delete", mock.AnythingOfType("string")).Return(nil)
+		mockRepository.On("CountFindByID", mock.AnythingOfType("string")).Return(10, nil)
+		mockRepository.On("Update", mock.AnythingOfType("string"), mock.AnythingOfType("*models.Todo")).Return(mockTodo, nil)
 
-	// Mock service in handler
-	todoService := services.NewTodoService(mockRepository)
+		result, err := service.Update(DefaultID, &models.Todo{})
 
-	todoService.Delete("5f9e9dc1c5e4cd34e6ac0bb7")
+		assert.NoError(t, err)
+		assert.Nil(t, result)
+	})
+
+	t.Run("error when count find by id", func(t *testing.T) {
+		mockRepository := new(mockRepositories.TodoRepository)
+		service := services.NewTodoService(mockRepository)
+
+		mockRepository.On("CountFindByID", mock.AnythingOfType("string")).Return(0, ErrDefault)
+		mockRepository.On("Update", mock.AnythingOfType("string"), mock.AnythingOfType("*models.Todo")).Return(nil, nil)
+
+		result, err := service.Update(DefaultID, &models.Todo{})
+
+		assert.Nil(t, result)
+		assert.Error(t, err)
+	})
+
+	t.Run("error when update", func(t *testing.T) {
+		mockRepository := new(mockRepositories.TodoRepository)
+		service := services.NewTodoService(mockRepository)
+
+		mockRepository.On("CountFindByID", mock.AnythingOfType("string")).Return(10, nil)
+		mockRepository.On("Update", mock.AnythingOfType("string"), mock.AnythingOfType("*models.Todo")).Return(nil, ErrDefault)
+
+		result, err := service.Update(DefaultID, &models.Todo{})
+
+		assert.Nil(t, result)
+		assert.Error(t, err)
+	})
 }
 
-// TestDeleteFailedDatabaseError - testing Delete
-func TestDeleteFailedDatabaseError(t *testing.T) {
-	var mockTodo models.Todo
-	err := faker.FakeData(&mockTodo)
-	assert.NoError(t, err)
+func TestTodoDelete(t *testing.T) {
+	t.Run("success when delete", func(t *testing.T) {
+		mockRepository := new(mockRepositories.TodoRepository)
+		service := services.NewTodoService(mockRepository)
 
-	mockRepository := new(mockRepositories.TodoRepository)
+		mockRepository.On("Delete", mock.AnythingOfType("string")).Return(nil)
 
-	// Mock GetAll service
-	mockRepository.On("Delete", mock.AnythingOfType("string")).Return(errors.New(""))
+		err := service.Delete(DefaultID)
 
-	// Mock service in handler
-	todoService := services.NewTodoService(mockRepository)
+		assert.NoError(t, err)
+	})
 
-	todoService.Delete("5f9e9dc1c5e4cd34e6ac0bb7")
+	t.Run("error when delete", func(t *testing.T) {
+		mockRepository := new(mockRepositories.TodoRepository)
+		service := services.NewTodoService(mockRepository)
+
+		mockRepository.On("Delete", mock.AnythingOfType("string")).Return(ErrDefault)
+
+		err := service.Delete(DefaultID)
+
+		assert.Error(t, err)
+	})
 }
