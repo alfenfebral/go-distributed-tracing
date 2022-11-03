@@ -1,21 +1,25 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"time"
 
 	"github.com/getsentry/sentry-go"
 	sentryhttp "github.com/getsentry/sentry-go/http"
-	"github.com/go-chi/chi"
-	"github.com/go-chi/chi/middleware"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
 	"github.com/joho/godotenv"
+	"github.com/riandyrn/otelchi"
 	"github.com/sirupsen/logrus"
 
 	"go-distributed-tracing/handlers"
+	pkg_jaeger "go-distributed-tracing/pkg/jaeger"
 	pkg_mongodb "go-distributed-tracing/pkg/mongodb"
 	repository "go-distributed-tracing/repository"
 	services "go-distributed-tracing/services"
@@ -31,6 +35,7 @@ func Routes() *chi.Mux {
 	sentryHandler := sentryhttp.New(sentryhttp.Options{})
 
 	router := chi.NewRouter()
+	router.Use(otelchi.Middleware(os.Getenv("APP_NAME"), otelchi.WithChiRoutes(router)))
 	router.Use(
 		sentryHandler.Handle,
 		render.SetContentType(render.ContentTypeJSON), // Set content-Type headers as application/json
@@ -71,8 +76,15 @@ func main() {
 	// Load environment variables
 	err := godotenv.Load()
 	if err != nil {
-		utils.CaptureError(errors.New("Error loading .env file"))
+		utils.CaptureError(errors.New("error loading .env file"))
 	}
+
+	tp := pkg_jaeger.InitializeTracing()
+	defer func() {
+		if err := tp.Shutdown(context.Background()); err != nil {
+			log.Printf("Error shutting down tracer provider: %v", err)
+		}
+	}()
 
 	// Init MongoDB
 	_, cancel, client := pkg_mongodb.InitMongoDB()
@@ -95,7 +107,7 @@ func main() {
 	todoService := services.NewTodoService(todoRepo)
 
 	// Handler
-	handlers.NewTodoHTTPHandler(router, todoService)
+	handlers.NewTodoHTTPHandler(router, todoService, tp)
 
 	// Print
 	PrintAllRoutes(router)

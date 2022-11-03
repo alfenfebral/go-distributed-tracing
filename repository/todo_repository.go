@@ -17,8 +17,8 @@ import (
 
 // TodoRepository represent the todo repository contract
 type TodoRepository interface {
-	FindAll(keyword string, limit int, offset int) ([]*models.Todo, error)
-	CountFindAll(keyword string) (int, error)
+	FindAll(ctx context.Context, keyword string, limit int, offset int) ([]*models.Todo, error)
+	CountFindAll(ctx context.Context, keyword string) (int, error)
 	FindById(id string) (*models.Todo, error)
 	CountFindByID(id string) (int, error)
 	Store(value *models.Todo) (*models.Todo, error)
@@ -38,10 +38,7 @@ func NewMongoTodoRepository(client *mongo.Client) TodoRepository {
 }
 
 // FindAll - find all todo
-func (m *mongoTodoRepository) FindAll(keyword string, limit int, offset int) ([]*models.Todo, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
+func (m *mongoTodoRepository) FindAll(ctx context.Context, keyword string, limit int, offset int) ([]*models.Todo, error) {
 	var results []*models.Todo
 
 	// Pass these options to the Find method
@@ -80,10 +77,7 @@ func (m *mongoTodoRepository) FindAll(keyword string, limit int, offset int) ([]
 }
 
 // CountFindAll - count find all todo
-func (m *mongoTodoRepository) CountFindAll(keyword string) (int, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
+func (m *mongoTodoRepository) CountFindAll(ctx context.Context, keyword string) (int, error) {
 	collection := m.client.Database(os.Getenv("DB_NAME")).Collection("todo")
 
 	total, err := collection.CountDocuments(ctx, bson.M{"title": bson.M{"$regex": keyword, "$options": "i"}})

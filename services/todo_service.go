@@ -1,13 +1,16 @@
 package services
 
 import (
+	"context"
 	"go-distributed-tracing/models"
 	"go-distributed-tracing/repository"
+
+	"go.opentelemetry.io/otel"
 )
 
 // TodoService represent the todo service
 type TodoService interface {
-	GetAll(keyword string, limit int, offset int) ([]*models.Todo, int, error)
+	GetAll(ctx context.Context, keyword string, limit int, offset int) ([]*models.Todo, int, error)
 	GetByID(id string) (*models.Todo, error)
 	Create(value *models.Todo) (*models.Todo, error)
 	Update(id string, value *models.Todo) (*models.Todo, error)
@@ -26,14 +29,17 @@ func NewTodoService(a repository.TodoRepository) TodoService {
 }
 
 // GetAll - get all todo service
-func (a *todoService) GetAll(keyword string, limit int, offset int) ([]*models.Todo, int, error) {
-	res, err := a.todoRepo.FindAll(keyword, limit, offset)
+func (a *todoService) GetAll(ctx context.Context, keyword string, limit int, offset int) ([]*models.Todo, int, error) {
+	_, span := otel.Tracer("TodoService").Start(ctx, "TodoService.GetAll")
+	defer span.End()
+
+	res, err := a.todoRepo.FindAll(ctx, keyword, limit, offset)
 	if err != nil {
 		return nil, 0, err
 	}
 
 	// Count total
-	total, err := a.todoRepo.CountFindAll(keyword)
+	total, err := a.todoRepo.CountFindAll(ctx, keyword)
 	if err != nil {
 		return nil, 0, err
 	}

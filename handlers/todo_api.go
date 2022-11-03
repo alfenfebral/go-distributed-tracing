@@ -8,19 +8,22 @@ import (
 	"go-distributed-tracing/utils"
 	response "go-distributed-tracing/utils/response"
 
-	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
+	tracesdk "go.opentelemetry.io/otel/sdk/trace"
 )
 
 // TodoHandler represent the httphandler for file
 type TodoHandler struct {
 	TodoService services.TodoService
+	tp          *tracesdk.TracerProvider
 }
 
 // NewTodoHTTPHandler - make http handler
-func NewTodoHTTPHandler(router *chi.Mux, service services.TodoService) {
+func NewTodoHTTPHandler(router *chi.Mux, service services.TodoService, tp *tracesdk.TracerProvider) {
 	handler := &TodoHandler{
 		TodoService: service,
+		tp:          tp,
 	}
 
 	router.Get("/todo", handler.GetAll)
@@ -32,6 +35,10 @@ func NewTodoHTTPHandler(router *chi.Mux, service services.TodoService) {
 
 // GetAll - get all todo http handler
 func (handler *TodoHandler) GetAll(w http.ResponseWriter, r *http.Request) {
+	// Each execution of the run loop, we should get a new "root" span and context.
+	ctx, span := handler.tp.Tracer("TodoHandler").Start(r.Context(), "TodoHandler.GetAll")
+	defer span.End()
+
 	qQuery := r.URL.Query().Get("q")
 	pageQuery := r.URL.Query().Get("page")
 	perPageQuery := r.URL.Query().Get("per_page")
@@ -52,7 +59,7 @@ func (handler *TodoHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 	perPage := utils.PerPage(perPageQuery)
 	offset := utils.Offset(currentPage, perPage)
 
-	results, totalData, err := handler.TodoService.GetAll(qQuery, perPage, offset)
+	results, totalData, err := handler.TodoService.GetAll(ctx, qQuery, perPage, offset)
 	if err != nil {
 		response.ResponseError(w, r, err)
 		return
