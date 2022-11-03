@@ -29,7 +29,7 @@ func TestCurrentPage(t *testing.T) {
 // TotalPage - get total pages
 func TestTotalPage(t *testing.T) {
 	value := utils.TotalPage(20, 10)
-	assert.Equal(t, value, 2.0)
+	assert.Equal(t, value, 2)
 }
 
 // Offset - offset of pages
