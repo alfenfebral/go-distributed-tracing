@@ -9,15 +9,15 @@ import (
 	"testing"
 
 	"go-distributed-tracing/handlers"
+	"go-distributed-tracing/models"
 	"go-distributed-tracing/utils"
 
 	mockServices "go-distributed-tracing/mocks/services"
 
-	"go-distributed-tracing/models"
-
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"go.opentelemetry.io/otel/sdk/trace"
 )
 
 var ErrDefault error = errors.New("error")
@@ -36,9 +36,13 @@ func TestNewTodoHTTPHandler(t *testing.T) {
 	router := chi.NewRouter()
 	mockService := new(mockServices.TodoService)
 
-	mockService.On("Create", mock.AnythingOfType("*models.Todo")).Return(&models.Todo{}, nil)
+	mockService.On(
+		"Create",
+		mock.AnythingOfType("context.Context"),
+		mock.AnythingOfType("*models.Todo"),
+	).Return(&models.Todo{}, nil)
 
-	handlers.NewTodoHTTPHandler(router, mockService)
+	handlers.NewTodoHTTPHandler(router, mockService, trace.NewTracerProvider())
 }
 
 // TestTodoGetAll - testing GetAll [200]
@@ -46,20 +50,20 @@ func TestTodoGetAll(t *testing.T) {
 	t.Run(WhenError400Validation, func(t *testing.T) {
 		utils.InitializeValidator()
 
-		mockService := new(mockServices.TodoService)
-
 		req, err := http.NewRequest(http.MethodGet, "/api/v1/todo?page=-1&per_page=-1", nil)
 		assert.NoError(t, err)
-
 		req.Header.Set("Content-Type", "application/json")
+
+		mockService := new(mockServices.TodoService)
+		tp := trace.NewTracerProvider()
 
 		userHandler := handlers.TodoHandler{
 			TodoService: mockService,
+			Tp:          tp,
 		}
 
 		rr := httptest.NewRecorder()
 		handler := http.HandlerFunc(userHandler.GetAll)
-
 		handler.ServeHTTP(rr, req)
 
 		// Check the status code is what expected
@@ -71,22 +75,27 @@ func TestTodoGetAll(t *testing.T) {
 	t.Run(WhenError500Service, func(t *testing.T) {
 		utils.InitializeValidator()
 
-		mockService := new(mockServices.TodoService)
-
 		req, err := http.NewRequest(http.MethodGet, "/api/v1/todo?page=1&per_page=10", nil)
 		assert.NoError(t, err)
-
 		req.Header.Set("Content-Type", "application/json")
 
-		mockService.On("GetAll", mock.AnythingOfType("string"), mock.AnythingOfType("int"), mock.AnythingOfType("int")).Return(nil, 1, ErrDefault)
+		mockService := new(mockServices.TodoService)
+		mockService.On(
+			"GetAll",
+			mock.Anything,
+			mock.AnythingOfType("string"),
+			mock.AnythingOfType("int"),
+			mock.AnythingOfType("int"),
+		).Return(nil, 1, ErrDefault)
+		tp := trace.NewTracerProvider()
 
 		userHandler := handlers.TodoHandler{
 			TodoService: mockService,
+			Tp:          tp,
 		}
 
 		rr := httptest.NewRecorder()
 		handler := http.HandlerFunc(userHandler.GetAll)
-
 		handler.ServeHTTP(rr, req)
 
 		// Check the status code is what expected
@@ -101,22 +110,27 @@ func TestTodoGetAll(t *testing.T) {
 		mockListTodo := make([]*models.Todo, 0)
 		mockListTodo = append(mockListTodo, &models.Todo{})
 
-		mockService := new(mockServices.TodoService)
-
 		req, err := http.NewRequest(http.MethodGet, "/api/v1/todo?page=1&per_page=10", nil)
 		assert.NoError(t, err)
-
 		req.Header.Set("Content-Type", "application/json")
 
-		mockService.On("GetAll", mock.AnythingOfType("string"), mock.AnythingOfType("int"), mock.AnythingOfType("int")).Return(mockListTodo, 1, nil)
+		mockService := new(mockServices.TodoService)
+		mockService.On(
+			"GetAll",
+			mock.Anything,
+			mock.AnythingOfType("string"),
+			mock.AnythingOfType("int"),
+			mock.AnythingOfType("int"),
+		).Return(mockListTodo, 1, nil)
+		tp := trace.NewTracerProvider()
 
 		userHandler := handlers.TodoHandler{
 			TodoService: mockService,
+			Tp:          tp,
 		}
 
 		rr := httptest.NewRecorder()
 		handler := http.HandlerFunc(userHandler.GetAll)
-
 		handler.ServeHTTP(rr, req)
 
 		// Check the status code is what expected
@@ -132,20 +146,20 @@ func TestTodoCreate(t *testing.T) {
 	t.Run(WhenError400EOF, func(t *testing.T) {
 		utils.InitializeValidator()
 
-		mockService := new(mockServices.TodoService)
-
 		req, err := http.NewRequest(http.MethodPost, "/api/v1/todo", bytes.NewReader([]byte("")))
 		assert.NoError(t, err)
-
 		req.Header.Set("Content-Type", "application/json")
+
+		mockService := new(mockServices.TodoService)
+		tp := trace.NewTracerProvider()
 
 		userHandler := handlers.TodoHandler{
 			TodoService: mockService,
+			Tp:          tp,
 		}
 
 		rr := httptest.NewRecorder()
 		handler := http.HandlerFunc(userHandler.Create)
-
 		handler.ServeHTTP(rr, req)
 
 		// Check the status code is what expected
@@ -153,8 +167,6 @@ func TestTodoCreate(t *testing.T) {
 	})
 	t.Run("when return 400 bad request (error validation) ", func(t *testing.T) {
 		utils.InitializeValidator()
-
-		mockService := new(mockServices.TodoService)
 
 		mockPostBody := map[string]interface{}{
 			"title":       "",
@@ -164,16 +176,18 @@ func TestTodoCreate(t *testing.T) {
 
 		req, err := http.NewRequest(http.MethodPost, "/api/v1/todo", bytes.NewReader(body))
 		assert.NoError(t, err)
-
 		req.Header.Set("Content-Type", "application/json")
+
+		mockService := new(mockServices.TodoService)
+		tp := trace.NewTracerProvider()
 
 		userHandler := handlers.TodoHandler{
 			TodoService: mockService,
+			Tp:          tp,
 		}
 
 		rr := httptest.NewRecorder()
 		handler := http.HandlerFunc(userHandler.Create)
-
 		handler.ServeHTTP(rr, req)
 
 		// Check the status code is what expected
@@ -181,8 +195,6 @@ func TestTodoCreate(t *testing.T) {
 	})
 	t.Run("when error 500 internal error (error service)", func(t *testing.T) {
 		utils.InitializeValidator()
-
-		mockService := new(mockServices.TodoService)
 
 		mockPostBody := map[string]interface{}{
 			"title":       "lorem ipsum",
@@ -192,18 +204,19 @@ func TestTodoCreate(t *testing.T) {
 
 		req, err := http.NewRequest(http.MethodPost, "/api/v1/todo", bytes.NewReader(body))
 		assert.NoError(t, err)
-
 		req.Header.Set("Content-Type", "application/json")
 
-		mockService.On("Create", mock.AnythingOfType("*models.Todo")).Return(nil, errors.New(""))
+		mockService := new(mockServices.TodoService)
+		mockService.On("Create", mock.Anything, mock.AnythingOfType("*models.Todo")).Return(nil, errors.New(""))
+		tp := trace.NewTracerProvider()
 
 		userHandler := handlers.TodoHandler{
 			TodoService: mockService,
+			Tp:          tp,
 		}
 
 		rr := httptest.NewRecorder()
 		handler := http.HandlerFunc(userHandler.Create)
-
 		handler.ServeHTTP(rr, req)
 
 		// Check the status code is what expected
@@ -215,8 +228,6 @@ func TestTodoCreate(t *testing.T) {
 	t.Run("when return 201 created", func(t *testing.T) {
 		utils.InitializeValidator()
 
-		mockService := new(mockServices.TodoService)
-
 		mockPostBody := map[string]interface{}{
 			"title":       "lorem ipsum",
 			"description": "desc",
@@ -225,18 +236,19 @@ func TestTodoCreate(t *testing.T) {
 
 		req, err := http.NewRequest(http.MethodPost, "/api/v1/todo", bytes.NewReader(body))
 		assert.NoError(t, err)
-
 		req.Header.Set("Content-Type", "application/json")
 
-		mockService.On("Create", mock.AnythingOfType("*models.Todo")).Return(&models.Todo{}, nil)
+		mockService := new(mockServices.TodoService)
+		mockService.On("Create", mock.Anything, mock.AnythingOfType("*models.Todo")).Return(&models.Todo{}, nil)
+		tp := trace.NewTracerProvider()
 
 		userHandler := handlers.TodoHandler{
 			TodoService: mockService,
+			Tp:          tp,
 		}
 
 		rr := httptest.NewRecorder()
 		handler := http.HandlerFunc(userHandler.Create)
-
 		handler.ServeHTTP(rr, req)
 
 		// Check the status code is what expected
@@ -252,22 +264,21 @@ func TestTodoGetByID(t *testing.T) {
 	t.Run(WhenError404NotFound, func(t *testing.T) {
 		utils.InitializeValidator()
 
-		mockService := new(mockServices.TodoService)
-
 		req, err := http.NewRequest(http.MethodGet, "/api/v1/todo?id=1", nil)
 		assert.NoError(t, err)
-
 		req.Header.Set("Content-Type", "application/json")
 
-		mockService.On("GetByID", mock.AnythingOfType("string")).Return(nil, ErrNotFound)
+		mockService := new(mockServices.TodoService)
+		mockService.On("GetByID", mock.Anything, mock.AnythingOfType("string")).Return(nil, ErrNotFound)
+		tp := trace.NewTracerProvider()
 
 		userHandler := handlers.TodoHandler{
 			TodoService: mockService,
+			Tp:          tp,
 		}
 
 		rr := httptest.NewRecorder()
 		handler := http.HandlerFunc(userHandler.GetByID)
-
 		handler.ServeHTTP(rr, req)
 
 		// Check the status code is what expected
@@ -279,22 +290,21 @@ func TestTodoGetByID(t *testing.T) {
 	t.Run(WhenError500Service, func(t *testing.T) {
 		utils.InitializeValidator()
 
-		mockService := new(mockServices.TodoService)
-
 		req, err := http.NewRequest(http.MethodGet, "/api/v1/todo?id=1", nil)
 		assert.NoError(t, err)
-
 		req.Header.Set("Content-Type", "application/json")
 
-		mockService.On("GetByID", mock.AnythingOfType("string")).Return(nil, ErrDefault)
+		mockService := new(mockServices.TodoService)
+		mockService.On("GetByID", mock.Anything, mock.AnythingOfType("string")).Return(nil, ErrDefault)
+		tp := trace.NewTracerProvider()
 
 		userHandler := handlers.TodoHandler{
 			TodoService: mockService,
+			Tp:          tp,
 		}
 
 		rr := httptest.NewRecorder()
 		handler := http.HandlerFunc(userHandler.GetByID)
-
 		handler.ServeHTTP(rr, req)
 
 		// Check the status code is what expected
@@ -306,22 +316,22 @@ func TestTodoGetByID(t *testing.T) {
 	t.Run(WhenSuccess200OK, func(t *testing.T) {
 		utils.InitializeValidator()
 
-		mockService := new(mockServices.TodoService)
-
 		req, err := http.NewRequest(http.MethodGet, "/api/v1/todo?id=1", nil)
 		assert.NoError(t, err)
 
 		req.Header.Set("Content-Type", "application/json")
 
-		mockService.On("GetByID", mock.AnythingOfType("string")).Return(&models.Todo{}, nil)
+		mockService := new(mockServices.TodoService)
+		mockService.On("GetByID", mock.Anything, mock.AnythingOfType("string")).Return(&models.Todo{}, nil)
+		tp := trace.NewTracerProvider()
 
 		userHandler := handlers.TodoHandler{
 			TodoService: mockService,
+			Tp:          tp,
 		}
 
 		rr := httptest.NewRecorder()
 		handler := http.HandlerFunc(userHandler.GetByID)
-
 		handler.ServeHTTP(rr, req)
 
 		// Check the status code is what expected
@@ -337,22 +347,26 @@ func TestTodoUpdate(t *testing.T) {
 	t.Run(WhenError400EOF, func(t *testing.T) {
 		utils.InitializeValidator()
 
-		mockService := new(mockServices.TodoService)
-
 		req, err := http.NewRequest(http.MethodPut, "/api/v1/product?id=1", bytes.NewReader([]byte("")))
 		assert.NoError(t, err)
-
 		req.Header.Set("Content-Type", "application/json")
 
-		mockService.On("Update", mock.AnythingOfType("string"), mock.AnythingOfType("*models.Todo")).Return(&models.Todo{}, nil)
+		mockService := new(mockServices.TodoService)
+		mockService.On(
+			"Update",
+			mock.Anything,
+			mock.AnythingOfType("string"),
+			mock.AnythingOfType("*models.Todo"),
+		).Return(&models.Todo{}, nil)
+		tp := trace.NewTracerProvider()
 
 		userHandler := handlers.TodoHandler{
 			TodoService: mockService,
+			Tp:          tp,
 		}
 
 		rr := httptest.NewRecorder()
 		handler := http.HandlerFunc(userHandler.Update)
-
 		handler.ServeHTTP(rr, req)
 
 		// Check the status code is what expected
@@ -360,8 +374,6 @@ func TestTodoUpdate(t *testing.T) {
 	})
 	t.Run(WhenError400Validation, func(t *testing.T) {
 		utils.InitializeValidator()
-
-		mockService := new(mockServices.TodoService)
 
 		mockPostBody := map[string]interface{}{
 			"title":       "",
@@ -371,16 +383,18 @@ func TestTodoUpdate(t *testing.T) {
 
 		req, err := http.NewRequest(http.MethodPut, "/api/v1/todo?id=1", bytes.NewReader(body))
 		assert.NoError(t, err)
-
 		req.Header.Set("Content-Type", "application/json")
+
+		mockService := new(mockServices.TodoService)
+		tp := trace.NewTracerProvider()
 
 		userHandler := handlers.TodoHandler{
 			TodoService: mockService,
+			Tp:          tp,
 		}
 
 		rr := httptest.NewRecorder()
 		handler := http.HandlerFunc(userHandler.Update)
-
 		handler.ServeHTTP(rr, req)
 
 		// Check the status code is what expected
@@ -392,8 +406,6 @@ func TestTodoUpdate(t *testing.T) {
 	t.Run(WhenError404NotFound, func(t *testing.T) {
 		utils.InitializeValidator()
 
-		mockService := new(mockServices.TodoService)
-
 		mockPostBody := map[string]interface{}{
 			"title":       "a",
 			"description": "a",
@@ -402,18 +414,24 @@ func TestTodoUpdate(t *testing.T) {
 
 		req, err := http.NewRequest(http.MethodPut, "/api/v1/todo?id=1", bytes.NewReader(body))
 		assert.NoError(t, err)
-
 		req.Header.Set("Content-Type", "application/json")
 
-		mockService.On("Update", mock.AnythingOfType("string"), mock.AnythingOfType("*models.Todo")).Return(nil, ErrNotFound)
+		mockService := new(mockServices.TodoService)
+		mockService.On(
+			"Update",
+			mock.Anything,
+			mock.AnythingOfType("string"),
+			mock.AnythingOfType("*models.Todo"),
+		).Return(nil, ErrNotFound)
+		tp := trace.NewTracerProvider()
 
 		userHandler := handlers.TodoHandler{
 			TodoService: mockService,
+			Tp:          tp,
 		}
 
 		rr := httptest.NewRecorder()
 		handler := http.HandlerFunc(userHandler.Update)
-
 		handler.ServeHTTP(rr, req)
 
 		// Check the status code is what expected
@@ -425,8 +443,6 @@ func TestTodoUpdate(t *testing.T) {
 	t.Run(WhenError500Service, func(t *testing.T) {
 		utils.InitializeValidator()
 
-		mockService := new(mockServices.TodoService)
-
 		mockPostBody := map[string]interface{}{
 			"title":       "a",
 			"description": "a",
@@ -435,18 +451,24 @@ func TestTodoUpdate(t *testing.T) {
 
 		req, err := http.NewRequest(http.MethodPut, "/api/v1/todo?id=1", bytes.NewReader(body))
 		assert.NoError(t, err)
-
 		req.Header.Set("Content-Type", "application/json")
 
-		mockService.On("Update", mock.AnythingOfType("string"), mock.AnythingOfType("*models.Todo")).Return(nil, ErrDefault)
+		mockService := new(mockServices.TodoService)
+		mockService.On(
+			"Update",
+			mock.Anything,
+			mock.AnythingOfType("string"),
+			mock.AnythingOfType("*models.Todo"),
+		).Return(nil, ErrDefault)
+		tp := trace.NewTracerProvider()
 
 		userHandler := handlers.TodoHandler{
 			TodoService: mockService,
+			Tp:          tp,
 		}
 
 		rr := httptest.NewRecorder()
 		handler := http.HandlerFunc(userHandler.Update)
-
 		handler.ServeHTTP(rr, req)
 
 		// Check the status code is what expected
@@ -458,8 +480,6 @@ func TestTodoUpdate(t *testing.T) {
 	t.Run(WhenSuccess200OK, func(t *testing.T) {
 		utils.InitializeValidator()
 
-		mockService := new(mockServices.TodoService)
-
 		mockPostBody := map[string]interface{}{
 			"title":       "a",
 			"description": "a",
@@ -468,18 +488,24 @@ func TestTodoUpdate(t *testing.T) {
 
 		req, err := http.NewRequest(http.MethodPut, "/api/v1/todo?id=1", bytes.NewReader(body))
 		assert.NoError(t, err)
-
 		req.Header.Set("Content-Type", "application/json")
 
-		mockService.On("Update", mock.AnythingOfType("string"), mock.AnythingOfType("*models.Todo")).Return(&models.Todo{}, nil)
+		mockService := new(mockServices.TodoService)
+		mockService.On(
+			"Update",
+			mock.Anything,
+			mock.AnythingOfType("string"),
+			mock.AnythingOfType("*models.Todo"),
+		).Return(&models.Todo{}, nil)
+		tp := trace.NewTracerProvider()
 
 		userHandler := handlers.TodoHandler{
 			TodoService: mockService,
+			Tp:          tp,
 		}
 
 		rr := httptest.NewRecorder()
 		handler := http.HandlerFunc(userHandler.Update)
-
 		handler.ServeHTTP(rr, req)
 
 		// Check the status code is what expected
@@ -494,16 +520,18 @@ func TestTodoUpdate(t *testing.T) {
 func TestTodoDelete(t *testing.T) {
 	t.Run(WhenError404NotFound, func(t *testing.T) {
 		utils.InitializeValidator()
-		mockService := new(mockServices.TodoService)
 
 		req, err := http.NewRequest(http.MethodDelete, "/api/v1/product?id=", nil)
 		assert.NoError(t, err)
 		req.Header.Set("Content-Type", "application/json")
 
-		mockService.On("Delete", mock.AnythingOfType("string")).Return(ErrNotFound)
+		mockService := new(mockServices.TodoService)
+		mockService.On("Delete", mock.Anything, mock.AnythingOfType("string")).Return(ErrNotFound)
+		tp := trace.NewTracerProvider()
 
 		userHandler := handlers.TodoHandler{
 			TodoService: mockService,
+			Tp:          tp,
 		}
 
 		rr := httptest.NewRecorder()
@@ -515,16 +543,18 @@ func TestTodoDelete(t *testing.T) {
 	})
 	t.Run(WhenError500Service, func(t *testing.T) {
 		utils.InitializeValidator()
-		mockService := new(mockServices.TodoService)
 
 		req, err := http.NewRequest(http.MethodDelete, "/api/v1/todo?id=1", nil)
 		assert.NoError(t, err)
 		req.Header.Set("Content-Type", "application/json")
 
-		mockService.On("Delete", mock.AnythingOfType("string")).Return(ErrDefault)
+		mockService := new(mockServices.TodoService)
+		mockService.On("Delete", mock.Anything, mock.AnythingOfType("string")).Return(ErrDefault)
+		tp := trace.NewTracerProvider()
 
 		userHandler := handlers.TodoHandler{
 			TodoService: mockService,
+			Tp:          tp,
 		}
 
 		rr := httptest.NewRecorder()
@@ -540,22 +570,21 @@ func TestTodoDelete(t *testing.T) {
 	t.Run(WhenSuccess200OK, func(t *testing.T) {
 		utils.InitializeValidator()
 
-		mockService := new(mockServices.TodoService)
-
 		req, err := http.NewRequest(http.MethodDelete, "/api/v1/todo?id=1", nil)
 		assert.NoError(t, err)
-
 		req.Header.Set("Content-Type", "application/json")
 
-		mockService.On("Delete", mock.AnythingOfType("string")).Return(nil)
+		mockService := new(mockServices.TodoService)
+		mockService.On("Delete", mock.Anything, mock.AnythingOfType("string")).Return(nil)
+		tp := trace.NewTracerProvider()
 
 		userHandler := handlers.TodoHandler{
 			TodoService: mockService,
+			Tp:          tp,
 		}
 
 		rr := httptest.NewRecorder()
 		handler := http.HandlerFunc(userHandler.Delete)
-
 		handler.ServeHTTP(rr, req)
 
 		// Check the status code is what expected

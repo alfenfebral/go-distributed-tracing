@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"io"
 	"net/http"
 
 	"go-distributed-tracing/models"
@@ -109,7 +110,7 @@ func (handler *TodoHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	data := &models.TodoRequest{}
 	if err := render.Bind(r, data); err != nil {
-		if err.Error() == "EOF" {
+		if err.Error() == io.EOF.Error() {
 			response.ResponseBodyError(w, r, err)
 			return
 		}
@@ -142,7 +143,7 @@ func (handler *TodoHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 	data := &models.TodoRequest{}
 	if err := render.Bind(r, data); err != nil {
-		if err.Error() == "EOF" {
+		if err.Error() == io.EOF.Error() {
 			response.ResponseBodyError(w, r, err)
 			return
 		}
