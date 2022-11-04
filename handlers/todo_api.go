@@ -10,20 +10,20 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
-	tracesdk "go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/sdk/trace"
 )
 
 // TodoHandler represent the httphandler for file
 type TodoHandler struct {
 	TodoService services.TodoService
-	tp          *tracesdk.TracerProvider
+	Tp          *trace.TracerProvider
 }
 
 // NewTodoHTTPHandler - make http handler
-func NewTodoHTTPHandler(router *chi.Mux, service services.TodoService, tp *tracesdk.TracerProvider) {
+func NewTodoHTTPHandler(router *chi.Mux, service services.TodoService, tp *trace.TracerProvider) {
 	handler := &TodoHandler{
 		TodoService: service,
-		tp:          tp,
+		Tp:          tp,
 	}
 
 	router.Get("/todo", handler.GetAll)
@@ -35,7 +35,7 @@ func NewTodoHTTPHandler(router *chi.Mux, service services.TodoService, tp *trace
 
 // GetAll - get all todo http handler
 func (handler *TodoHandler) GetAll(w http.ResponseWriter, r *http.Request) {
-	ctx, span := handler.tp.Tracer("TodoHandler").Start(r.Context(), "TodoHandler.GetAll")
+	ctx, span := handler.Tp.Tracer("TodoHandler").Start(r.Context(), "TodoHandler.GetAll")
 	defer span.End()
 
 	qQuery := r.URL.Query().Get("q")
@@ -78,7 +78,7 @@ func (handler *TodoHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 
 // GetByID - get todo by id http handler
 func (handler *TodoHandler) GetByID(w http.ResponseWriter, r *http.Request) {
-	ctx, span := handler.tp.Tracer("TodoHandler").Start(r.Context(), "TodoHandler.GetByID")
+	ctx, span := handler.Tp.Tracer("TodoHandler").Start(r.Context(), "TodoHandler.GetByID")
 	defer span.End()
 
 	// Get and filter id param
@@ -104,7 +104,7 @@ func (handler *TodoHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 
 // Create - create todo http handler
 func (handler *TodoHandler) Create(w http.ResponseWriter, r *http.Request) {
-	ctx, span := handler.tp.Tracer("TodoHandler").Start(r.Context(), "TodoHandler.Create")
+	ctx, span := handler.Tp.Tracer("TodoHandler").Start(r.Context(), "TodoHandler.Create")
 	defer span.End()
 
 	data := &models.TodoRequest{}
@@ -134,7 +134,7 @@ func (handler *TodoHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 // Update - update instance by id http handler
 func (handler *TodoHandler) Update(w http.ResponseWriter, r *http.Request) {
-	ctx, span := handler.tp.Tracer("TodoHandler").Start(r.Context(), "TodoHandler.Update")
+	ctx, span := handler.Tp.Tracer("TodoHandler").Start(r.Context(), "TodoHandler.Update")
 	defer span.End()
 
 	// Get and filter id param
@@ -176,7 +176,7 @@ func (handler *TodoHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 // Delete - delete instance by id http handler
 func (handler *TodoHandler) Delete(w http.ResponseWriter, r *http.Request) {
-	ctx, span := handler.tp.Tracer("TodoHandler").Start(r.Context(), "TodoHandler.Delete")
+	ctx, span := handler.Tp.Tracer("TodoHandler").Start(r.Context(), "TodoHandler.Delete")
 	defer span.End()
 
 	// Get and filter id param
