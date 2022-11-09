@@ -4,7 +4,7 @@ package mocks
 
 import (
 	context "context"
-	models "go-distributed-tracing/models"
+	models "go-distributed-tracing/todo/models"
 
 	mock "github.com/stretchr/testify/mock"
 )

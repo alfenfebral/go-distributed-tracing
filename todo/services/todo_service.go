@@ -2,8 +2,8 @@ package services
 
 import (
 	"context"
-	"go-distributed-tracing/models"
-	"go-distributed-tracing/repository"
+	"go-distributed-tracing/todo/models"
+	"go-distributed-tracing/todo/repository"
 
 	"go.opentelemetry.io/otel"
 )
@@ -76,7 +76,7 @@ func (a *todoService) Create(ctx context.Context, value *models.Todo) (*models.T
 	return res, nil
 }
 
-// Update - update todo service
+// Update - update todo by id service
 func (a *todoService) Update(ctx context.Context, id string, value *models.Todo) (*models.Todo, error) {
 	ctx, span := otel.Tracer("TodoService").Start(ctx, "TodoService.Update")
 	defer span.End()
@@ -97,7 +97,7 @@ func (a *todoService) Update(ctx context.Context, id string, value *models.Todo)
 	return nil, nil
 }
 
-// Delete - delete todo service
+// Delete - delete todo by id service
 func (a *todoService) Delete(ctx context.Context, id string) error {
 	ctx, span := otel.Tracer("TodoService").Start(ctx, "TodoService.Delete")
 	defer span.End()

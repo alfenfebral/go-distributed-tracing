@@ -10,7 +10,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
-	"go-distributed-tracing/models"
+	"go-distributed-tracing/todo/models"
 	"go-distributed-tracing/utils"
 )
 
@@ -155,7 +155,7 @@ func (m *mongoTodoRepository) Store(ctx context.Context, value *models.Todo) (*m
 	return result, nil
 }
 
-// Update - update todo
+// Update - update todo by id
 func (m *mongoTodoRepository) Update(ctx context.Context, id string, value *models.Todo) (*models.Todo, error) {
 	docID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
@@ -182,7 +182,7 @@ func (m *mongoTodoRepository) Update(ctx context.Context, id string, value *mode
 	return result, nil
 }
 
-// Delete - delete todo
+// Delete - delete todo by id
 func (m *mongoTodoRepository) Delete(ctx context.Context, id string) error {
 	collection := m.client.Database(os.Getenv("DB_NAME")).Collection("todo")
 

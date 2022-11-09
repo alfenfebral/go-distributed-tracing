@@ -4,8 +4,8 @@ import (
 	"io"
 	"net/http"
 
-	"go-distributed-tracing/models"
-	"go-distributed-tracing/services"
+	"go-distributed-tracing/todo/models"
+	"go-distributed-tracing/todo/services"
 	"go-distributed-tracing/utils"
 	response "go-distributed-tracing/utils/response"
 
@@ -14,29 +14,33 @@ import (
 	"go.opentelemetry.io/otel/sdk/trace"
 )
 
-// TodoHandler represent the httphandler for file
-type TodoHandler struct {
-	TodoService services.TodoService
-	Tp          *trace.TracerProvider
+// todoHandler represent the http handler
+type todoHandler struct {
+	router      *chi.Mux
+	tp          *trace.TracerProvider
+	todoService services.TodoService
 }
 
 // NewTodoHTTPHandler - make http handler
-func NewTodoHTTPHandler(router *chi.Mux, service services.TodoService, tp *trace.TracerProvider) {
-	handler := &TodoHandler{
-		TodoService: service,
-		Tp:          tp,
+func NewTodoHTTPHandler(router *chi.Mux, tp *trace.TracerProvider, service services.TodoService) *todoHandler {
+	return &todoHandler{
+		router:      router,
+		tp:          tp,
+		todoService: service,
 	}
+}
 
-	router.Get("/todo", handler.GetAll)
-	router.Get("/todo/{id}", handler.GetByID)
-	router.Post("/todo", handler.Create)
-	router.Put("/todo/{id}", handler.Update)
-	router.Delete("/todo/{id}", handler.Delete)
+func (handler *todoHandler) RegisterRoutes() {
+	handler.router.Get("/todo", handler.GetAll)
+	handler.router.Get("/todo/{id}", handler.GetByID)
+	handler.router.Post("/todo", handler.Create)
+	handler.router.Put("/todo/{id}", handler.Update)
+	handler.router.Delete("/todo/{id}", handler.Delete)
 }
 
 // GetAll - get all todo http handler
-func (handler *TodoHandler) GetAll(w http.ResponseWriter, r *http.Request) {
-	ctx, span := handler.Tp.Tracer("TodoHandler").Start(r.Context(), "TodoHandler.GetAll")
+func (handler *todoHandler) GetAll(w http.ResponseWriter, r *http.Request) {
+	ctx, span := handler.tp.Tracer("todoHandler").Start(r.Context(), "todoHandler.GetAll")
 	defer span.End()
 
 	qQuery := r.URL.Query().Get("q")
@@ -59,7 +63,7 @@ func (handler *TodoHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 	perPage := utils.PerPage(perPageQuery)
 	offset := utils.Offset(currentPage, perPage)
 
-	results, totalData, err := handler.TodoService.GetAll(ctx, qQuery, perPage, offset)
+	results, totalData, err := handler.todoService.GetAll(ctx, qQuery, perPage, offset)
 	if err != nil {
 		response.ResponseError(w, r, err)
 		return
@@ -78,15 +82,15 @@ func (handler *TodoHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetByID - get todo by id http handler
-func (handler *TodoHandler) GetByID(w http.ResponseWriter, r *http.Request) {
-	ctx, span := handler.Tp.Tracer("TodoHandler").Start(r.Context(), "TodoHandler.GetByID")
+func (handler *todoHandler) GetByID(w http.ResponseWriter, r *http.Request) {
+	ctx, span := handler.tp.Tracer("todoHandler").Start(r.Context(), "todoHandler.GetByID")
 	defer span.End()
 
 	// Get and filter id param
 	id := chi.URLParam(r, "id")
 
 	// Get detail
-	result, err := handler.TodoService.GetByID(ctx, id)
+	result, err := handler.todoService.GetByID(ctx, id)
 	if err != nil {
 		if err.Error() == "not found" {
 			response.ResponseNotFound(w, r, "Item not found")
@@ -104,8 +108,8 @@ func (handler *TodoHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 }
 
 // Create - create todo http handler
-func (handler *TodoHandler) Create(w http.ResponseWriter, r *http.Request) {
-	ctx, span := handler.Tp.Tracer("TodoHandler").Start(r.Context(), "TodoHandler.Create")
+func (handler *todoHandler) Create(w http.ResponseWriter, r *http.Request) {
+	ctx, span := handler.tp.Tracer("todoHandler").Start(r.Context(), "todoHandler.Create")
 	defer span.End()
 
 	data := &models.TodoRequest{}
@@ -119,7 +123,7 @@ func (handler *TodoHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := handler.TodoService.Create(ctx, &models.Todo{
+	result, err := handler.todoService.Create(ctx, &models.Todo{
 		Title:       data.Title,
 		Description: data.Description,
 	})
@@ -134,8 +138,8 @@ func (handler *TodoHandler) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 // Update - update instance by id http handler
-func (handler *TodoHandler) Update(w http.ResponseWriter, r *http.Request) {
-	ctx, span := handler.Tp.Tracer("TodoHandler").Start(r.Context(), "TodoHandler.Update")
+func (handler *todoHandler) Update(w http.ResponseWriter, r *http.Request) {
+	ctx, span := handler.tp.Tracer("todoHandler").Start(r.Context(), "todoHandler.Update")
 	defer span.End()
 
 	// Get and filter id param
@@ -153,7 +157,7 @@ func (handler *TodoHandler) Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Edit data
-	_, err := handler.TodoService.Update(ctx, id, &models.Todo{
+	_, err := handler.todoService.Update(ctx, id, &models.Todo{
 		Title:       data.Title,
 		Description: data.Description,
 	})
@@ -176,15 +180,15 @@ func (handler *TodoHandler) Update(w http.ResponseWriter, r *http.Request) {
 }
 
 // Delete - delete instance by id http handler
-func (handler *TodoHandler) Delete(w http.ResponseWriter, r *http.Request) {
-	ctx, span := handler.Tp.Tracer("TodoHandler").Start(r.Context(), "TodoHandler.Delete")
+func (handler *todoHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	ctx, span := handler.tp.Tracer("todoHandler").Start(r.Context(), "todoHandler.Delete")
 	defer span.End()
 
 	// Get and filter id param
 	id := chi.URLParam(r, "id")
 
 	// Delete record
-	err := handler.TodoService.Delete(ctx, id)
+	err := handler.todoService.Delete(ctx, id)
 	if err != nil {
 		if err.Error() == "not found" {
 			response.ResponseNotFound(w, r, "Item not found")

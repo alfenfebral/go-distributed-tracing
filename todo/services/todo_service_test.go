@@ -3,9 +3,9 @@ package services_test
 import (
 	"context"
 	"errors"
-	mockRepositories "go-distributed-tracing/mocks/repository"
-	"go-distributed-tracing/models"
-	"go-distributed-tracing/services"
+	mockRepositories "go-distributed-tracing/todo/mocks/repository"
+	"go-distributed-tracing/todo/models"
+	"go-distributed-tracing/todo/services"
 	"testing"
 
 	"github.com/stretchr/testify/assert"

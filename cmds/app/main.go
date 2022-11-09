@@ -18,11 +18,11 @@ import (
 	"github.com/riandyrn/otelchi"
 	"github.com/sirupsen/logrus"
 
-	"go-distributed-tracing/handlers"
 	pkg_jaeger "go-distributed-tracing/pkg/jaeger"
 	pkg_mongodb "go-distributed-tracing/pkg/mongodb"
-	repository "go-distributed-tracing/repository"
-	services "go-distributed-tracing/services"
+	handlers "go-distributed-tracing/todo/delivery/http"
+	repository "go-distributed-tracing/todo/repository"
+	services "go-distributed-tracing/todo/services"
 	"go-distributed-tracing/utils"
 	response "go-distributed-tracing/utils/response"
 )
@@ -107,7 +107,8 @@ func main() {
 	todoService := services.NewTodoService(todoRepo)
 
 	// Handler
-	handlers.NewTodoHTTPHandler(router, todoService, tp)
+	todoHandler := handlers.NewTodoHTTPHandler(router, tp, todoService)
+	todoHandler.RegisterRoutes()
 
 	// Print
 	PrintAllRoutes(router)

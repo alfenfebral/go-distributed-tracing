@@ -8,11 +8,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"go-distributed-tracing/handlers"
-	"go-distributed-tracing/models"
+	handlers "go-distributed-tracing/todo/delivery/http"
+	"go-distributed-tracing/todo/models"
 	"go-distributed-tracing/utils"
 
-	mockServices "go-distributed-tracing/mocks/services"
+	mockServices "go-distributed-tracing/todo/mocks/services"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
@@ -42,7 +42,7 @@ func TestNewTodoHTTPHandler(t *testing.T) {
 		mock.AnythingOfType("*models.Todo"),
 	).Return(&models.Todo{}, nil)
 
-	handlers.NewTodoHTTPHandler(router, mockService, trace.NewTracerProvider())
+	handlers.NewTodoHTTPHandler(router, trace.NewTracerProvider(), mockService)
 }
 
 // TestTodoGetAll - testing GetAll [200]
@@ -57,13 +57,10 @@ func TestTodoGetAll(t *testing.T) {
 		mockService := new(mockServices.TodoService)
 		tp := trace.NewTracerProvider()
 
-		userHandler := handlers.TodoHandler{
-			TodoService: mockService,
-			Tp:          tp,
-		}
+		todoHandler := handlers.NewTodoHTTPHandler(chi.NewRouter(), tp, mockService)
 
 		rr := httptest.NewRecorder()
-		handler := http.HandlerFunc(userHandler.GetAll)
+		handler := http.HandlerFunc(todoHandler.GetAll)
 		handler.ServeHTTP(rr, req)
 
 		// Check the status code is what expected
@@ -89,13 +86,10 @@ func TestTodoGetAll(t *testing.T) {
 		).Return(nil, 1, ErrDefault)
 		tp := trace.NewTracerProvider()
 
-		userHandler := handlers.TodoHandler{
-			TodoService: mockService,
-			Tp:          tp,
-		}
+		todoHandler := handlers.NewTodoHTTPHandler(chi.NewRouter(), tp, mockService)
 
 		rr := httptest.NewRecorder()
-		handler := http.HandlerFunc(userHandler.GetAll)
+		handler := http.HandlerFunc(todoHandler.GetAll)
 		handler.ServeHTTP(rr, req)
 
 		// Check the status code is what expected
@@ -124,13 +118,10 @@ func TestTodoGetAll(t *testing.T) {
 		).Return(mockListTodo, 1, nil)
 		tp := trace.NewTracerProvider()
 
-		userHandler := handlers.TodoHandler{
-			TodoService: mockService,
-			Tp:          tp,
-		}
+		todoHandler := handlers.NewTodoHTTPHandler(chi.NewRouter(), tp, mockService)
 
 		rr := httptest.NewRecorder()
-		handler := http.HandlerFunc(userHandler.GetAll)
+		handler := http.HandlerFunc(todoHandler.GetAll)
 		handler.ServeHTTP(rr, req)
 
 		// Check the status code is what expected
@@ -153,13 +144,10 @@ func TestTodoCreate(t *testing.T) {
 		mockService := new(mockServices.TodoService)
 		tp := trace.NewTracerProvider()
 
-		userHandler := handlers.TodoHandler{
-			TodoService: mockService,
-			Tp:          tp,
-		}
+		todoHandler := handlers.NewTodoHTTPHandler(chi.NewRouter(), tp, mockService)
 
 		rr := httptest.NewRecorder()
-		handler := http.HandlerFunc(userHandler.Create)
+		handler := http.HandlerFunc(todoHandler.Create)
 		handler.ServeHTTP(rr, req)
 
 		// Check the status code is what expected
@@ -181,13 +169,10 @@ func TestTodoCreate(t *testing.T) {
 		mockService := new(mockServices.TodoService)
 		tp := trace.NewTracerProvider()
 
-		userHandler := handlers.TodoHandler{
-			TodoService: mockService,
-			Tp:          tp,
-		}
+		todoHandler := handlers.NewTodoHTTPHandler(chi.NewRouter(), tp, mockService)
 
 		rr := httptest.NewRecorder()
-		handler := http.HandlerFunc(userHandler.Create)
+		handler := http.HandlerFunc(todoHandler.Create)
 		handler.ServeHTTP(rr, req)
 
 		// Check the status code is what expected
@@ -210,13 +195,10 @@ func TestTodoCreate(t *testing.T) {
 		mockService.On("Create", mock.Anything, mock.AnythingOfType("*models.Todo")).Return(nil, errors.New(""))
 		tp := trace.NewTracerProvider()
 
-		userHandler := handlers.TodoHandler{
-			TodoService: mockService,
-			Tp:          tp,
-		}
+		todoHandler := handlers.NewTodoHTTPHandler(chi.NewRouter(), tp, mockService)
 
 		rr := httptest.NewRecorder()
-		handler := http.HandlerFunc(userHandler.Create)
+		handler := http.HandlerFunc(todoHandler.Create)
 		handler.ServeHTTP(rr, req)
 
 		// Check the status code is what expected
@@ -242,13 +224,10 @@ func TestTodoCreate(t *testing.T) {
 		mockService.On("Create", mock.Anything, mock.AnythingOfType("*models.Todo")).Return(&models.Todo{}, nil)
 		tp := trace.NewTracerProvider()
 
-		userHandler := handlers.TodoHandler{
-			TodoService: mockService,
-			Tp:          tp,
-		}
+		todoHandler := handlers.NewTodoHTTPHandler(chi.NewRouter(), tp, mockService)
 
 		rr := httptest.NewRecorder()
-		handler := http.HandlerFunc(userHandler.Create)
+		handler := http.HandlerFunc(todoHandler.Create)
 		handler.ServeHTTP(rr, req)
 
 		// Check the status code is what expected
@@ -272,13 +251,10 @@ func TestTodoGetByID(t *testing.T) {
 		mockService.On("GetByID", mock.Anything, mock.AnythingOfType("string")).Return(nil, ErrNotFound)
 		tp := trace.NewTracerProvider()
 
-		userHandler := handlers.TodoHandler{
-			TodoService: mockService,
-			Tp:          tp,
-		}
+		todoHandler := handlers.NewTodoHTTPHandler(chi.NewRouter(), tp, mockService)
 
 		rr := httptest.NewRecorder()
-		handler := http.HandlerFunc(userHandler.GetByID)
+		handler := http.HandlerFunc(todoHandler.GetByID)
 		handler.ServeHTTP(rr, req)
 
 		// Check the status code is what expected
@@ -298,13 +274,10 @@ func TestTodoGetByID(t *testing.T) {
 		mockService.On("GetByID", mock.Anything, mock.AnythingOfType("string")).Return(nil, ErrDefault)
 		tp := trace.NewTracerProvider()
 
-		userHandler := handlers.TodoHandler{
-			TodoService: mockService,
-			Tp:          tp,
-		}
+		todoHandler := handlers.NewTodoHTTPHandler(chi.NewRouter(), tp, mockService)
 
 		rr := httptest.NewRecorder()
-		handler := http.HandlerFunc(userHandler.GetByID)
+		handler := http.HandlerFunc(todoHandler.GetByID)
 		handler.ServeHTTP(rr, req)
 
 		// Check the status code is what expected
@@ -325,13 +298,10 @@ func TestTodoGetByID(t *testing.T) {
 		mockService.On("GetByID", mock.Anything, mock.AnythingOfType("string")).Return(&models.Todo{}, nil)
 		tp := trace.NewTracerProvider()
 
-		userHandler := handlers.TodoHandler{
-			TodoService: mockService,
-			Tp:          tp,
-		}
+		todoHandler := handlers.NewTodoHTTPHandler(chi.NewRouter(), tp, mockService)
 
 		rr := httptest.NewRecorder()
-		handler := http.HandlerFunc(userHandler.GetByID)
+		handler := http.HandlerFunc(todoHandler.GetByID)
 		handler.ServeHTTP(rr, req)
 
 		// Check the status code is what expected
@@ -360,13 +330,10 @@ func TestTodoUpdate(t *testing.T) {
 		).Return(&models.Todo{}, nil)
 		tp := trace.NewTracerProvider()
 
-		userHandler := handlers.TodoHandler{
-			TodoService: mockService,
-			Tp:          tp,
-		}
+		todoHandler := handlers.NewTodoHTTPHandler(chi.NewRouter(), tp, mockService)
 
 		rr := httptest.NewRecorder()
-		handler := http.HandlerFunc(userHandler.Update)
+		handler := http.HandlerFunc(todoHandler.Update)
 		handler.ServeHTTP(rr, req)
 
 		// Check the status code is what expected
@@ -388,13 +355,10 @@ func TestTodoUpdate(t *testing.T) {
 		mockService := new(mockServices.TodoService)
 		tp := trace.NewTracerProvider()
 
-		userHandler := handlers.TodoHandler{
-			TodoService: mockService,
-			Tp:          tp,
-		}
+		todoHandler := handlers.NewTodoHTTPHandler(chi.NewRouter(), tp, mockService)
 
 		rr := httptest.NewRecorder()
-		handler := http.HandlerFunc(userHandler.Update)
+		handler := http.HandlerFunc(todoHandler.Update)
 		handler.ServeHTTP(rr, req)
 
 		// Check the status code is what expected
@@ -425,13 +389,10 @@ func TestTodoUpdate(t *testing.T) {
 		).Return(nil, ErrNotFound)
 		tp := trace.NewTracerProvider()
 
-		userHandler := handlers.TodoHandler{
-			TodoService: mockService,
-			Tp:          tp,
-		}
+		todoHandler := handlers.NewTodoHTTPHandler(chi.NewRouter(), tp, mockService)
 
 		rr := httptest.NewRecorder()
-		handler := http.HandlerFunc(userHandler.Update)
+		handler := http.HandlerFunc(todoHandler.Update)
 		handler.ServeHTTP(rr, req)
 
 		// Check the status code is what expected
@@ -462,13 +423,10 @@ func TestTodoUpdate(t *testing.T) {
 		).Return(nil, ErrDefault)
 		tp := trace.NewTracerProvider()
 
-		userHandler := handlers.TodoHandler{
-			TodoService: mockService,
-			Tp:          tp,
-		}
+		todoHandler := handlers.NewTodoHTTPHandler(chi.NewRouter(), tp, mockService)
 
 		rr := httptest.NewRecorder()
-		handler := http.HandlerFunc(userHandler.Update)
+		handler := http.HandlerFunc(todoHandler.Update)
 		handler.ServeHTTP(rr, req)
 
 		// Check the status code is what expected
@@ -499,13 +457,10 @@ func TestTodoUpdate(t *testing.T) {
 		).Return(&models.Todo{}, nil)
 		tp := trace.NewTracerProvider()
 
-		userHandler := handlers.TodoHandler{
-			TodoService: mockService,
-			Tp:          tp,
-		}
+		todoHandler := handlers.NewTodoHTTPHandler(chi.NewRouter(), tp, mockService)
 
 		rr := httptest.NewRecorder()
-		handler := http.HandlerFunc(userHandler.Update)
+		handler := http.HandlerFunc(todoHandler.Update)
 		handler.ServeHTTP(rr, req)
 
 		// Check the status code is what expected
@@ -529,13 +484,10 @@ func TestTodoDelete(t *testing.T) {
 		mockService.On("Delete", mock.Anything, mock.AnythingOfType("string")).Return(ErrNotFound)
 		tp := trace.NewTracerProvider()
 
-		userHandler := handlers.TodoHandler{
-			TodoService: mockService,
-			Tp:          tp,
-		}
+		todoHandler := handlers.NewTodoHTTPHandler(chi.NewRouter(), tp, mockService)
 
 		rr := httptest.NewRecorder()
-		handler := http.HandlerFunc(userHandler.Delete)
+		handler := http.HandlerFunc(todoHandler.Delete)
 		handler.ServeHTTP(rr, req)
 
 		// Check the status code is what expected
@@ -552,13 +504,10 @@ func TestTodoDelete(t *testing.T) {
 		mockService.On("Delete", mock.Anything, mock.AnythingOfType("string")).Return(ErrDefault)
 		tp := trace.NewTracerProvider()
 
-		userHandler := handlers.TodoHandler{
-			TodoService: mockService,
-			Tp:          tp,
-		}
+		todoHandler := handlers.NewTodoHTTPHandler(chi.NewRouter(), tp, mockService)
 
 		rr := httptest.NewRecorder()
-		handler := http.HandlerFunc(userHandler.Delete)
+		handler := http.HandlerFunc(todoHandler.Delete)
 		handler.ServeHTTP(rr, req)
 
 		// Check the status code is what expected
@@ -578,13 +527,10 @@ func TestTodoDelete(t *testing.T) {
 		mockService.On("Delete", mock.Anything, mock.AnythingOfType("string")).Return(nil)
 		tp := trace.NewTracerProvider()
 
-		userHandler := handlers.TodoHandler{
-			TodoService: mockService,
-			Tp:          tp,
-		}
+		todoHandler := handlers.NewTodoHTTPHandler(chi.NewRouter(), tp, mockService)
 
 		rr := httptest.NewRecorder()
-		handler := http.HandlerFunc(userHandler.Delete)
+		handler := http.HandlerFunc(todoHandler.Delete)
 		handler.ServeHTTP(rr, req)
 
 		// Check the status code is what expected
