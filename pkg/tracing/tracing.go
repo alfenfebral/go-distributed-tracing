@@ -1,4 +1,4 @@
-package pkg_jaeger
+package pkg_tracing
 
 import (
 	"log"

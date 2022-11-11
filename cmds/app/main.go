@@ -14,12 +14,12 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
-	"github.com/joho/godotenv"
 	"github.com/riandyrn/otelchi"
 	"github.com/sirupsen/logrus"
 
-	pkg_jaeger "go-distributed-tracing/pkg/jaeger"
+	"go-distributed-tracing/pkg/config"
 	pkg_mongodb "go-distributed-tracing/pkg/mongodb"
+	pkg_tracing "go-distributed-tracing/pkg/tracing"
 	handlers "go-distributed-tracing/todo/delivery/http"
 	repository "go-distributed-tracing/todo/repository"
 	services "go-distributed-tracing/todo/services"
@@ -74,12 +74,12 @@ func main() {
 	utils.InitializeValidator()
 
 	// Load environment variables
-	err := godotenv.Load()
+	err := config.LoadConfig()
 	if err != nil {
 		utils.CaptureError(errors.New("error loading .env file"))
 	}
 
-	tp := pkg_jaeger.InitializeTracing()
+	tp := pkg_tracing.InitializeTracing()
 	defer func() {
 		if err := tp.Shutdown(context.Background()); err != nil {
 			log.Printf("Error shutting down tracer provider: %v", err)
