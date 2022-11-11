@@ -11,6 +11,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/sdk/trace"
 )
 
@@ -55,6 +56,11 @@ func (handler *todoHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 		PerPage: perPageQuery,
 	})
 	if err != nil {
+		span.SetAttributes(
+			attribute.Key("error").Bool(true),
+		)
+		span.RecordError(err)
+
 		response.ResponseErrorValidation(w, r, err)
 		return
 	}
@@ -65,6 +71,11 @@ func (handler *todoHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 
 	results, totalData, err := handler.todoService.GetAll(ctx, qQuery, perPage, offset)
 	if err != nil {
+		span.SetAttributes(
+			attribute.Key("error").Bool(true),
+		)
+		span.RecordError(err)
+
 		response.ResponseError(w, r, err)
 		return
 	}
@@ -92,6 +103,11 @@ func (handler *todoHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 	// Get detail
 	result, err := handler.todoService.GetByID(ctx, id)
 	if err != nil {
+		span.SetAttributes(
+			attribute.Key("error").Bool(true),
+		)
+		span.RecordError(err)
+
 		if err.Error() == "not found" {
 			response.ResponseNotFound(w, r, "Item not found")
 			return
@@ -114,10 +130,17 @@ func (handler *todoHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	data := &models.TodoRequest{}
 	if err := render.Bind(r, data); err != nil {
+		span.SetAttributes(
+			attribute.Key("error").Bool(true),
+		)
+		span.RecordError(err)
+
 		if err.Error() == io.EOF.Error() {
 			response.ResponseBodyError(w, r, err)
 			return
 		}
+
+		span.SetAttributes(attribute.Bool("validation.error", true))
 
 		response.ResponseErrorValidation(w, r, err)
 		return
@@ -128,6 +151,11 @@ func (handler *todoHandler) Create(w http.ResponseWriter, r *http.Request) {
 		Description: data.Description,
 	})
 	if err != nil {
+		span.SetAttributes(
+			attribute.Key("error").Bool(true),
+		)
+		span.RecordError(err)
+
 		response.ResponseError(w, r, err)
 		return
 	}
@@ -147,6 +175,11 @@ func (handler *todoHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 	data := &models.TodoRequest{}
 	if err := render.Bind(r, data); err != nil {
+		span.SetAttributes(
+			attribute.Key("error").Bool(true),
+		)
+		span.RecordError(err)
+
 		if err.Error() == io.EOF.Error() {
 			response.ResponseBodyError(w, r, err)
 			return
@@ -163,6 +196,11 @@ func (handler *todoHandler) Update(w http.ResponseWriter, r *http.Request) {
 	})
 
 	if err != nil {
+		span.SetAttributes(
+			attribute.Key("error").Bool(true),
+		)
+		span.RecordError(err)
+
 		if err.Error() == "not found" {
 			response.ResponseNotFound(w, r, "Item not found")
 			return
@@ -190,6 +228,11 @@ func (handler *todoHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	// Delete record
 	err := handler.todoService.Delete(ctx, id)
 	if err != nil {
+		span.SetAttributes(
+			attribute.Key("error").Bool(true),
+		)
+		span.RecordError(err)
+
 		if err.Error() == "not found" {
 			response.ResponseNotFound(w, r, "Item not found")
 			return
